@@ -1,14 +1,14 @@
-# {PROJECT_NAME} - AGENTS.md
+# Queuestack - AGENTS.md
 
 ## Project Overview
-{Brief description of what this app does}
+A native macOS SwiftUI app providing a three-panel UI for the `qs` CLI tool. Wraps the CLI for all data operations (list, search, create, update, close, reopen) rather than reimplementing business logic. Body edits are written directly to markdown files since the CLI has no "edit body" command.
 
 ## Tech Stack
 - **Language**: Swift 6
 - **UI Framework**: SwiftUI
 - **IDE**: Xcode
-- **Platforms**: {iOS / macOS / iPadOS / watchOS / tvOS}
-- **Minimum Deployment**: {iOS 17.0 / macOS 14.0 / etc.}
+- **Platforms**: macOS
+- **Minimum Deployment**: macOS 26.2
 
 ## Style & Conventions (MANDATORY)
 **Strictly follow** the Swift/SwiftUI style guide: `~/Agents/Style/swift-swiftui-style-guide.md`
@@ -75,7 +75,7 @@ The `search` binary is located **inside** the documentation folder:
 - If a file needs to be added to the project, **stop and tell the user** — do not attempt it yourself
 - Use `xcodebuild` for building/testing only — never for project manipulation
 - **Exception**: Only proceed if the user gives explicit permission for a specific edit
-  
+
 ## File System Synchronized Groups (Xcode 16+)
 This project uses **File System Synchronized Groups** (internally `PBXFileSystemSynchronizedRootGroup`), introduced in Xcode 16. This means:
 - The `Classes/` and `Resources/` directories are **directly synchronized** with the file system
@@ -88,13 +88,10 @@ This project uses **File System Synchronized Groups** (internally `PBXFileSystem
 ## Build & Format Commands
 ```bash
 # Build
-xcodebuild -scheme "{SCHEME_NAME}" -destination "platform=iOS Simulator,name=iPhone 16" build
-
-# Run tests
-xcodebuild -scheme "{SCHEME_NAME}" -destination "platform=iOS Simulator,name=iPhone 16" test
+xcodebuild -scheme "Queuestack" -destination "platform=macOS" build
 
 # Clean
-xcodebuild -scheme "{SCHEME_NAME}" clean
+xcodebuild -scheme "Queuestack" clean
 ```
 
 ## Code Formatting (MANDATORY)
