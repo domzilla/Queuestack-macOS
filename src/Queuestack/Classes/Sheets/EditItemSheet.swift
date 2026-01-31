@@ -10,7 +10,7 @@ import DZFoundation
 import SwiftUI
 
 struct EditItemSheet: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
     @Environment(\.dismiss) private var dismiss
 
     let item: Item
@@ -95,7 +95,7 @@ struct EditItemSheet: View {
     @ViewBuilder
     private var labelsContent: some View {
         // Combine existing project labels with item's labels
-        let projectLabels = Set((self.appState.currentProjectState?.labels ?? []).map(\.name))
+        let projectLabels = Set((self.windowState.currentProjectState?.labels ?? []).map(\.name))
         let allLabels = projectLabels.union(self.selectedLabels).sorted()
 
         if allLabels.isEmpty, self.newLabelText.isEmpty {
@@ -176,7 +176,7 @@ struct EditItemSheet: View {
     }
 
     private var allCategoryNames: [String] {
-        var categories = Set((self.appState.currentProjectState?.categories ?? []).map(\.name))
+        var categories = Set((self.windowState.currentProjectState?.categories ?? []).map(\.name))
         if let current = self.selectedCategory {
             categories.insert(current)
         }
@@ -217,7 +217,7 @@ struct EditItemSheet: View {
     }
 
     private func saveChanges() {
-        guard let projectState = self.appState.currentProjectState else { return }
+        guard let projectState = self.windowState.currentProjectState else { return }
 
         self.isSaving = true
         self.errorMessage = nil
@@ -259,5 +259,5 @@ struct EditItemSheet: View {
 
 #Preview {
     EditItemSheet(item: Item.placeholder())
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
 }

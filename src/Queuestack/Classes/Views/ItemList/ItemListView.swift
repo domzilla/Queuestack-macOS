@@ -9,11 +9,11 @@
 import SwiftUI
 
 struct ItemListView: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
 
     var body: some View {
         VStack(spacing: 0) {
-            if let projectState = self.appState.currentProjectState {
+            if let projectState = self.windowState.currentProjectState {
                 self.itemListContent(projectState)
             } else {
                 // Empty state when no project selected
@@ -21,8 +21,8 @@ struct ItemListView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .navigationTitle(self.appState.selectedProject?.name ?? "")
-        .navigationSubtitle(self.appState.selectedProject?.path.path ?? "")
+        .navigationTitle(self.windowState.selectedProject?.name ?? "")
+        .navigationSubtitle(self.windowState.selectedProject?.path.path ?? "")
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
                 ItemListHeader()
@@ -35,7 +35,7 @@ struct ItemListView: View {
     private func itemListContent(_ projectState: ProjectState) -> some View {
         if projectState.isLoading {
             self.loadingView
-        } else if self.appState.filteredItems.isEmpty {
+        } else if self.windowState.filteredItems.isEmpty {
             self.emptyStateView
         } else {
             ItemTable()
@@ -66,10 +66,10 @@ struct ItemListView: View {
     }
 
     private var emptyStateTitle: String {
-        if !self.appState.filter.searchQuery.isEmpty {
+        if !self.windowState.filter.searchQuery.isEmpty {
             return String(localized: "No Results", comment: "Empty search results title")
         }
-        switch self.appState.filter.mode {
+        switch self.windowState.filter.mode {
         case .open:
             return String(localized: "No Open Items", comment: "Empty open items title")
         case .closed:
@@ -80,10 +80,10 @@ struct ItemListView: View {
     }
 
     private var emptyStateIcon: String {
-        if !self.appState.filter.searchQuery.isEmpty {
+        if !self.windowState.filter.searchQuery.isEmpty {
             return "magnifyingglass"
         }
-        switch self.appState.filter.mode {
+        switch self.windowState.filter.mode {
         case .open:
             return "tray"
         case .closed:
@@ -94,10 +94,10 @@ struct ItemListView: View {
     }
 
     private var emptyStateDescription: String {
-        if !self.appState.filter.searchQuery.isEmpty {
+        if !self.windowState.filter.searchQuery.isEmpty {
             return String(localized: "No items match your search query.", comment: "Empty search results description")
         }
-        switch self.appState.filter.mode {
+        switch self.windowState.filter.mode {
         case .open:
             return String(localized: "Create a new item to get started.", comment: "Empty open items description")
         case .closed:
@@ -113,5 +113,5 @@ struct ItemListView: View {
 
 #Preview {
     ItemListView()
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
 }

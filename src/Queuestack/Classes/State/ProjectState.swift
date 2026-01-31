@@ -179,6 +179,11 @@ final class ProjectState {
 
     func updateBody(of item: Item, to newBody: String) throws {
         try self.service.updateBody(of: item, to: newBody)
+
+        // Update the in-memory item
+        var updatedItem = item
+        updatedItem.body = newBody
+        self.updateOrAddItem(updatedItem)
     }
 
     func closeItem(_ item: Item) async throws {

@@ -10,7 +10,7 @@ import DZFoundation
 import SwiftUI
 
 struct AttachmentSection: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
 
     let item: Item
 
@@ -163,7 +163,7 @@ struct AttachmentSection: View {
         self.isProcessing = true
         Task {
             do {
-                try await self.appState.currentProjectState?.addAttachment(url.path, to: self.item)
+                try await self.windowState.currentProjectState?.addAttachment(url.path, to: self.item)
             } catch {
                 DZErrorLog(error)
             }
@@ -180,7 +180,7 @@ struct AttachmentSection: View {
         self.isProcessing = true
         Task {
             do {
-                try await self.appState.currentProjectState?.addAttachment(url, to: self.item)
+                try await self.windowState.currentProjectState?.addAttachment(url, to: self.item)
             } catch {
                 DZErrorLog(error)
             }
@@ -193,7 +193,7 @@ struct AttachmentSection: View {
         Task {
             do {
                 // CLI uses 1-based index
-                try await self.appState.currentProjectState?.removeAttachment(at: index + 1, from: self.item)
+                try await self.windowState.currentProjectState?.removeAttachment(at: index + 1, from: self.item)
             } catch {
                 DZErrorLog(error)
             }
@@ -204,6 +204,6 @@ struct AttachmentSection: View {
 
 #Preview {
     AttachmentSection(item: Item.placeholder())
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
         .padding()
 }

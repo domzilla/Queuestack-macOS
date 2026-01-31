@@ -9,15 +9,34 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(AppState.self) private var appState
+    @Environment(AppServices.self) private var services
+    @State private var windowState: WindowState?
+
+    var body: some View {
+        SwiftUI.Group {
+            if let windowState {
+                WindowContent(windowState: windowState)
+                    .environment(windowState)
+                    .focusedSceneValue(\.windowState, windowState)
+            }
+        }
+        .task {
+            if self.windowState == nil {
+                self.windowState = WindowState(services: self.services)
+            }
+        }
+    }
+}
+
+/// The actual window content, requiring an initialized WindowState
+private struct WindowContent: View {
+    @Bindable var windowState: WindowState
 
     @State private var showingNewItemSheet = false
     @State private var showingNewTemplateSheet = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        @Bindable var appState = self.appState
-
         NavigationSplitView(columnVisibility: self.$columnVisibility) {
             ProjectSidebar()
         } content: {
@@ -34,7 +53,7 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .disabled(self.appState.selectedProject == nil)
+                .disabled(self.windowState.selectedProject == nil)
                 .help(String(localized: "Create new item", comment: "Tooltip for new item button"))
             }
 
@@ -44,18 +63,18 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                     TextField(
                         String(localized: "Search globally...", comment: "Global search placeholder"),
-                        text: $appState.globalSearchQuery
+                        text: self.$windowState.globalSearchQuery
                     )
                     .textFieldStyle(.plain)
                     .onSubmit {
                         Task {
-                            await self.appState.performGlobalSearch()
+                            await self.windowState.performGlobalSearch()
                         }
                     }
 
-                    if !self.appState.globalSearchQuery.isEmpty {
+                    if !self.windowState.globalSearchQuery.isEmpty {
                         Button {
-                            self.appState.globalSearchQuery = ""
+                            self.windowState.globalSearchQuery = ""
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.secondary)
@@ -87,5 +106,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .environment(AppState())
+        .environment(AppServices())
 }

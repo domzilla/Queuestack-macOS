@@ -25,7 +25,7 @@ struct SidebarTreeView: View {
 }
 
 struct SidebarNodeRow: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
 
     let node: SidebarNode
     let onAddProject: (UUID?) -> Void
@@ -61,7 +61,7 @@ struct SidebarNodeRow: View {
             self.isExpanded = group.isExpanded
         }
         .onChange(of: self.isExpanded) { _, newValue in
-            self.appState.settings.setGroupExpanded(newValue, forGroupWithID: group.id)
+            self.windowState.services.settings.setGroupExpanded(newValue, forGroupWithID: group.id)
         }
     }
 
@@ -97,7 +97,7 @@ struct SidebarNodeRow: View {
         Divider()
 
         Button(role: .destructive) {
-            self.appState.settings.removeNode(id: group.id)
+            self.windowState.services.settings.removeNode(id: group.id)
         } label: {
             SwiftUI.Label(
                 String(localized: "Remove Group", comment: "Context menu remove group"),
@@ -120,9 +120,9 @@ struct SidebarNodeRow: View {
         Divider()
 
         Button(role: .destructive) {
-            self.appState.settings.removeNode(id: project.id)
-            if self.appState.selectedProjectID == project.id {
-                self.appState.selectedProjectID = nil
+            self.windowState.services.settings.removeNode(id: project.id)
+            if self.windowState.selectedProjectID == project.id {
+                self.windowState.selectedProjectID = nil
             }
         } label: {
             SwiftUI.Label(

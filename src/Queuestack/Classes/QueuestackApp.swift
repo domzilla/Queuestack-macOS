@@ -10,12 +10,14 @@ import SwiftUI
 
 @main
 struct QueuestackApp: App {
-    @State private var appState = AppState()
+    @State private var services = AppServices()
+    @FocusedValue(\.windowState) private var focusedWindowState
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
-                .environment(self.appState)
+                .environment(self.services)
         }
         .commands {
             // Replace default "New Window" (⌘N) with ⇧⌘N
@@ -24,18 +26,18 @@ struct QueuestackApp: App {
                     NotificationCenter.default.post(name: .createNewItem, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: [.command])
-                .disabled(self.appState.selectedProject == nil)
+                .disabled(self.focusedWindowState?.selectedProject == nil)
 
                 Button(String(localized: "New Template...", comment: "Menu item to create template")) {
                     NotificationCenter.default.post(name: .createNewTemplate, object: nil)
                 }
                 .keyboardShortcut("t", modifiers: [.command, .shift])
-                .disabled(self.appState.selectedProject == nil)
+                .disabled(self.focusedWindowState?.selectedProject == nil)
 
                 Divider()
 
                 Button(String(localized: "New Window", comment: "Menu item to create new window")) {
-                    NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
+                    self.openWindow(id: "main")
                 }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
             }
@@ -43,7 +45,22 @@ struct QueuestackApp: App {
     }
 }
 
+// MARK: - Notification Names
+
 extension Notification.Name {
     static let createNewItem = Notification.Name("createNewItem")
     static let createNewTemplate = Notification.Name("createNewTemplate")
+}
+
+// MARK: - Focused Value for Window State
+
+struct FocusedWindowStateKey: FocusedValueKey {
+    typealias Value = WindowState
+}
+
+extension FocusedValues {
+    var windowState: WindowState? {
+        get { self[FocusedWindowStateKey.self] }
+        set { self[FocusedWindowStateKey.self] = newValue }
+    }
 }

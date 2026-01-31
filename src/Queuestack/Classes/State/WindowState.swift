@@ -1,5 +1,5 @@
 //
-//  AppState.swift
+//  WindowState.swift
 //  Queuestack
 //
 //  Created by Dominic Rodemer on 31/01/2026.
@@ -9,15 +9,13 @@
 import DZFoundation
 import Foundation
 
-/// Main application state
+/// Per-window state for selection, editing, filtering, and search
 @Observable
 @MainActor
-final class AppState {
-    // MARK: - Dependencies
+final class WindowState {
+    // MARK: - Shared Services
 
-    let settings: SettingsManager
-    let projectManager: ProjectStateManager
-    private let service: Service
+    let services: AppServices
 
     // MARK: - Selection State
 
@@ -60,22 +58,20 @@ final class AppState {
 
     // MARK: - Initialization
 
-    init() {
-        self.settings = SettingsManager()
-        self.service = Service(binaryPath: self.settings.cliBinaryPath)
-        self.projectManager = ProjectStateManager(service: self.service)
+    init(services: AppServices) {
+        self.services = services
     }
 
     // MARK: - Computed Properties
 
     var selectedProject: Project? {
         guard let id = self.selectedProjectID else { return nil }
-        return self.settings.sidebarTree.findProject(id: id)
+        return self.services.settings.sidebarTree.findProject(id: id)
     }
 
     var currentProjectState: ProjectState? {
         guard let project = self.selectedProject else { return nil }
-        return self.projectManager.state(for: project)
+        return self.services.projectManager.state(for: project)
     }
 
     var selectedItem: Item? {
@@ -102,7 +98,7 @@ final class AppState {
     }
 
     var allProjects: [Project] {
-        self.settings.sidebarTree.allProjects
+        self.services.allProjects
     }
 
     // MARK: - Project Management
@@ -156,6 +152,17 @@ final class AppState {
         self.savedBodyText = ""
     }
 
+    /// Sync editing state with item if there are no local unsaved changes
+    /// Called when the underlying item is updated externally (e.g., from another window)
+    func syncBodyWithItem(_ item: Item) {
+        guard
+            self.editingBodyItemID == item.id,
+            !self.hasUnsavedBodyChanges else { return }
+
+        self.editingBodyText = item.body
+        self.savedBodyText = item.body
+    }
+
     private func onProjectSelectionChanged() {
         DZLog("onProjectSelectionChanged: selectedProjectID=\(String(describing: self.selectedProjectID))")
 
@@ -165,20 +172,18 @@ final class AppState {
         // Start watching new project
         if let project = self.selectedProject {
             DZLog("Selected project: \(project.name) at \(project.path.path)")
-            self.projectManager.startWatching(project: project)
+            self.services.projectManager.startWatching(project: project)
 
-            // Load items if not already loaded
-            let state = self.projectManager.state(for: project)
-            DZLog("State openItems.isEmpty=\(state.openItems.isEmpty), isLoading=\(state.isLoading)")
-            if state.openItems.isEmpty, !state.isLoading {
-                DZLog("Starting loadItems task")
+            // Always reload items to ensure fresh data (external tools may have modified files)
+            let state = self.services.projectManager.state(for: project)
+            if !state.isLoading {
                 Task {
                     await state.loadItems()
                 }
             }
         } else {
             DZLog("No project selected")
-            self.projectManager.stopWatching()
+            self.services.projectManager.stopWatching()
         }
     }
 
@@ -196,7 +201,7 @@ final class AppState {
 
         for project in self.allProjects {
             do {
-                let items = try await self.service.search(query: query, in: project, fullText: true)
+                let items = try await self.services.service.search(query: query, in: project, fullText: true)
                 if !items.isEmpty {
                     results.append(GlobalSearchResult(project: project, items: items))
                 }

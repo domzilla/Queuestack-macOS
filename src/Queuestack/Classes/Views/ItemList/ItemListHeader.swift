@@ -9,10 +9,10 @@
 import SwiftUI
 
 struct ItemListHeader: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
 
     var body: some View {
-        @Bindable var appState = self.appState
+        @Bindable var windowState = self.windowState
 
         VStack(alignment: .leading, spacing: 8) {
             // Row 1: Filter picker (left) + Category picker (right)
@@ -28,13 +28,13 @@ struct ItemListHeader: View {
                     .foregroundStyle(.secondary)
                 TextField(
                     String(localized: "Search locally...", comment: "Local search placeholder"),
-                    text: $appState.filter.searchQuery
+                    text: $windowState.filter.searchQuery
                 )
                 .textFieldStyle(.plain)
 
-                if !self.appState.filter.searchQuery.isEmpty {
+                if !self.windowState.filter.searchQuery.isEmpty {
                     Button {
-                        self.appState.filter.searchQuery = ""
+                        self.windowState.filter.searchQuery = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
@@ -49,13 +49,13 @@ struct ItemListHeader: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.bar)
-        .disabled(self.appState.selectedProject == nil)
+        .disabled(self.windowState.selectedProject == nil)
     }
 
     private var filterPicker: some View {
-        @Bindable var appState = self.appState
+        @Bindable var windowState = self.windowState
 
-        return Picker("", selection: $appState.filter.mode) {
+        return Picker("", selection: $windowState.filter.mode) {
             Text(String(localized: "Open", comment: "Open filter option"))
                 .tag(ItemFilter.FilterMode.open)
             Text(String(localized: "Closed", comment: "Closed filter option"))
@@ -69,17 +69,17 @@ struct ItemListHeader: View {
     }
 
     private var categoryPicker: some View {
-        let categories = self.appState.currentProjectState?.categories ?? []
-        let isFiltering = self.appState.filter.category != nil
+        let categories = self.windowState.currentProjectState?.categories ?? []
+        let isFiltering = self.windowState.filter.category != nil
 
         return Menu {
             Button(String(localized: "All Categories", comment: "All categories filter option")) {
-                self.appState.filter.category = nil
+                self.windowState.filter.category = nil
             }
             Divider()
             ForEach(categories, id: \.name) { category in
                 Button(category.name) {
-                    self.appState.filter.category = category.name
+                    self.windowState.filter.category = category.name
                 }
             }
         } label: {
@@ -93,5 +93,5 @@ struct ItemListHeader: View {
 
 #Preview {
     ItemListHeader()
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
 }

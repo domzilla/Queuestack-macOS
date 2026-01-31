@@ -11,20 +11,22 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ProjectSidebar: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
 
     @State private var showingAddMenu = false
     @State private var showingAddProjectSheet = false
     @State private var showingAddGroupSheet = false
     @State private var targetGroupID: UUID?
     @State private var isDropTargeted = false
+    @State private var showingUnsavedAlert = false
+    @State private var pendingProjectID: UUID?
 
     var body: some View {
-        @Bindable var appState = self.appState
+        @Bindable var windowState = self.windowState
 
-        List(selection: $appState.selectedProjectID) {
+        List(selection: $windowState.selectedProjectID) {
             SidebarTreeView(
-                nodes: self.appState.settings.sidebarTree,
+                nodes: self.windowState.services.settings.sidebarTree,
                 onAddProject: { groupID in
                     self.targetGroupID = groupID
                     self.showingAddProjectSheet = true
@@ -58,9 +60,30 @@ struct ProjectSidebar: View {
         .sheet(isPresented: self.$showingAddGroupSheet) {
             AddGroupSheet(targetGroupID: self.targetGroupID)
         }
-        .onChange(of: self.appState.selectedProjectID) { oldValue, newValue in
+        .onChange(of: self.windowState.selectedProjectID) { oldValue, newValue in
             DZLog("ProjectSidebar onChange: \(String(describing: oldValue)) -> \(String(describing: newValue))")
-            self.appState.handleProjectSelectionChange()
+            self.handleProjectSelectionChange(from: oldValue, to: newValue)
+        }
+        .alert(
+            String(localized: "Unsaved Changes", comment: "Unsaved changes alert title"),
+            isPresented: self.$showingUnsavedAlert
+        ) {
+            Button(String(localized: "Save", comment: "Save button")) {
+                self.windowState.saveBodyChanges()
+                self.commitPendingProjectSelection()
+            }
+            Button(String(localized: "Discard", comment: "Discard button"), role: .destructive) {
+                self.windowState.discardBodyChanges()
+                self.commitPendingProjectSelection()
+            }
+            Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
+                self.revertProjectSelection()
+            }
+        } message: {
+            Text(String(
+                localized: "Do you want to save your changes?",
+                comment: "Unsaved changes alert message"
+            ))
         }
     }
 
@@ -77,7 +100,7 @@ struct ProjectSidebar: View {
             // Try to create a project from the URL
             do {
                 let project = try Project.from(url: url)
-                self.appState.settings.addProject(project)
+                self.windowState.services.settings.addProject(project)
                 addedAny = true
             } catch {
                 // Not a valid queuestack project, skip
@@ -86,6 +109,42 @@ struct ProjectSidebar: View {
         }
 
         return addedAny
+    }
+
+    private func handleProjectSelectionChange(from oldID: UUID?, to newID: UUID?) {
+        // If selecting the same project, do nothing
+        if newID == oldID {
+            return
+        }
+
+        // If we're in the middle of handling unsaved changes, ignore further changes
+        if self.pendingProjectID != nil {
+            return
+        }
+
+        // If there are unsaved changes, show dialog
+        if self.windowState.hasUnsavedBodyChanges {
+            self.pendingProjectID = newID
+            // Revert selection immediately to prevent project loading
+            self.windowState.selectedProjectID = oldID
+            self.showingUnsavedAlert = true
+        } else {
+            // No unsaved changes, proceed with project change
+            self.windowState.handleProjectSelectionChange()
+        }
+    }
+
+    private func commitPendingProjectSelection() {
+        guard let pendingID = self.pendingProjectID else { return }
+        // Clear first to allow onChange to proceed normally
+        self.pendingProjectID = nil
+        self.windowState.clearBodyEditing()
+        self.windowState.selectedProjectID = pendingID
+    }
+
+    private func revertProjectSelection() {
+        // Selection was already reverted, just clear pending
+        self.pendingProjectID = nil
     }
 
     private var bottomBar: some View {
@@ -126,5 +185,5 @@ struct ProjectSidebar: View {
 
 #Preview {
     ProjectSidebar()
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
 }

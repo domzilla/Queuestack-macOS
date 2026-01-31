@@ -10,11 +10,11 @@ import DZFoundation
 import SwiftUI
 
 struct ItemBody: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        @Bindable var appState = self.appState
+        @Bindable var windowState = self.windowState
 
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -23,13 +23,13 @@ struct ItemBody: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    if self.appState.hasUnsavedBodyChanges {
+                    if self.windowState.hasUnsavedBodyChanges {
                         Circle()
                             .fill(.orange)
                             .frame(width: 6, height: 6)
 
                         Button {
-                            self.appState.discardBodyChanges()
+                            self.windowState.discardBodyChanges()
                         } label: {
                             Text(String(localized: "Discard", comment: "Discard changes button"))
                                 .font(.caption)
@@ -42,7 +42,7 @@ struct ItemBody: View {
                 Spacer()
             }
 
-            TextEditor(text: $appState.editingBodyText)
+            TextEditor(text: $windowState.editingBodyText)
                 .font(.body)
                 .scrollContentBackground(.hidden)
                 .padding(8)
@@ -54,7 +54,7 @@ struct ItemBody: View {
         .frame(maxHeight: .infinity)
         .onKeyPress(phases: .down) { press in
             if press.key == "s", press.modifiers.contains(.command) {
-                self.appState.saveBodyChanges()
+                self.windowState.saveBodyChanges()
                 return .handled
             }
             return .ignored
@@ -64,6 +64,6 @@ struct ItemBody: View {
 
 #Preview {
     ItemBody()
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
         .padding()
 }

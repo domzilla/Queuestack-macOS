@@ -10,7 +10,7 @@ import DZFoundation
 import SwiftUI
 
 struct NewItemSheet: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
     @Environment(\.dismiss) private var dismiss
 
     let isTemplate: Bool
@@ -100,7 +100,7 @@ struct NewItemSheet: View {
 
     @ViewBuilder
     private var labelsContent: some View {
-        let existingLabels = self.appState.currentProjectState?.labels ?? []
+        let existingLabels = self.windowState.currentProjectState?.labels ?? []
 
         if existingLabels.isEmpty, self.newLabelText.isEmpty {
             Text(String(localized: "No labels yet", comment: "No labels placeholder"))
@@ -159,7 +159,7 @@ struct NewItemSheet: View {
     // Native Picker doesn't support this interaction pattern.
     @ViewBuilder
     private var categoryContent: some View {
-        let existingCategories = self.appState.currentProjectState?.categories ?? []
+        let existingCategories = self.windowState.currentProjectState?.categories ?? []
 
         // None option
         self.noneOption
@@ -237,14 +237,14 @@ struct NewItemSheet: View {
         Task {
             do {
                 if self.isTemplate {
-                    _ = try await self.appState.createTemplate(
+                    _ = try await self.windowState.createTemplate(
                         title: itemTitle,
                         labels: Array(self.selectedLabels)
                     )
                 } else {
                     let trimmedNew = self.newCategoryText.trimmingCharacters(in: .whitespaces)
                     let category = self.selectedCategory ?? (trimmedNew.isEmpty ? nil : trimmedNew)
-                    _ = try await self.appState.createItem(
+                    _ = try await self.windowState.createItem(
                         title: itemTitle,
                         labels: Array(self.selectedLabels),
                         category: category
@@ -262,5 +262,5 @@ struct NewItemSheet: View {
 
 #Preview {
     NewItemSheet(isTemplate: false)
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
 }

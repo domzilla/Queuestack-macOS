@@ -10,7 +10,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct AddProjectSheet: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
     @Environment(\.dismiss) private var dismiss
 
     let targetGroupID: UUID?
@@ -97,8 +97,8 @@ struct AddProjectSheet: View {
 
         do {
             let project = try Project.from(url: url)
-            self.appState.settings.addProject(project, toGroupWithID: self.targetGroupID)
-            self.appState.selectProject(project)
+            self.windowState.services.settings.addProject(project, toGroupWithID: self.targetGroupID)
+            self.windowState.selectProject(project)
             self.dismiss()
         } catch {
             self.errorMessage = error.localizedDescription

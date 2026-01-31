@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct AddGroupSheet: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
     @Environment(\.dismiss) private var dismiss
 
     let targetGroupID: UUID?
@@ -55,7 +55,7 @@ struct AddGroupSheet: View {
         let name = self.groupName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
 
-        self.appState.settings.addGroup(name: name, toGroupWithID: self.targetGroupID)
+        self.windowState.services.settings.addGroup(name: name, toGroupWithID: self.targetGroupID)
         self.dismiss()
     }
 }

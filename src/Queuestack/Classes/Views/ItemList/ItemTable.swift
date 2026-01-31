@@ -10,15 +10,15 @@ import DZFoundation
 import SwiftUI
 
 struct ItemTable: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
 
     @State private var itemToEdit: Item?
     @State private var itemToDelete: Item?
 
     var body: some View {
-        @Bindable var appState = self.appState
+        @Bindable var windowState = self.windowState
 
-        Table(self.appState.filteredItems, selection: $appState.selectedItemID) {
+        Table(self.windowState.filteredItems, selection: $windowState.selectedItemID) {
             TableColumn(String(localized: "Category", comment: "Column header for category")) { item in
                 Text(item.category ?? "—")
                     .foregroundStyle(item.category != nil ? .secondary : .quaternary)
@@ -50,7 +50,7 @@ struct ItemTable: View {
         .contextMenu(forSelectionType: String.self) { selectedIDs in
             if
                 let itemID = selectedIDs.first,
-                let item = self.appState.currentProjectState?.item(withID: itemID)
+                let item = self.windowState.currentProjectState?.item(withID: itemID)
             {
                 self.itemContextMenu(item)
             }
@@ -92,8 +92,8 @@ struct ItemTable: View {
                 process.waitUntilExit()
 
                 // Reload items after deletion
-                await self.appState.currentProjectState?.loadItems()
-                self.appState.selectedItemID = nil
+                await self.windowState.currentProjectState?.loadItems()
+                self.windowState.selectedItemID = nil
             } catch {
                 DZFoundation.DZErrorLog(error)
             }
@@ -118,7 +118,7 @@ struct ItemTable: View {
         if item.status == .open {
             Button {
                 Task {
-                    try? await self.appState.currentProjectState?.closeItem(item)
+                    try? await self.windowState.currentProjectState?.closeItem(item)
                 }
             } label: {
                 SwiftUI.Label(
@@ -129,7 +129,7 @@ struct ItemTable: View {
         } else if item.status == .closed {
             Button {
                 Task {
-                    try? await self.appState.currentProjectState?.reopenItem(item)
+                    try? await self.windowState.currentProjectState?.reopenItem(item)
                 }
             } label: {
                 SwiftUI.Label(
@@ -169,5 +169,5 @@ struct ItemTable: View {
 
 #Preview {
     ItemTable()
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
 }

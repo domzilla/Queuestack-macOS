@@ -10,7 +10,7 @@ import DZFoundation
 import SwiftUI
 
 struct ItemDetailView: View {
-    @Environment(AppState.self) private var appState
+    @Environment(WindowState.self) private var windowState
 
     @State private var showingEditSheet = false
     @State private var showingUnsavedAlert = false
@@ -21,14 +21,14 @@ struct ItemDetailView: View {
     private var displayedItem: Item? {
         // If we're editing an item and there are unsaved changes, show that item
         if
-            let editingID = self.appState.editingBodyItemID,
-            self.appState.hasUnsavedBodyChanges,
-            let item = self.appState.currentProjectState?.item(withID: editingID)
+            let editingID = self.windowState.editingBodyItemID,
+            self.windowState.hasUnsavedBodyChanges,
+            let item = self.windowState.currentProjectState?.item(withID: editingID)
         {
             return item
         }
         // Otherwise show the selected item
-        return self.appState.selectedItem
+        return self.windowState.selectedItem
     }
 
     var body: some View {
@@ -39,19 +39,25 @@ struct ItemDetailView: View {
                 Color.clear
             }
         }
-        .onChange(of: self.appState.selectedItemID) { oldID, newID in
+        .onChange(of: self.windowState.selectedItemID) { oldID, newID in
             self.handleSelectionChange(from: oldID, to: newID)
+        }
+        .onChange(of: self.windowState.selectedItem?.body) { _, _ in
+            // Sync editing state when item body changes externally (e.g., from another window)
+            if let item = self.windowState.selectedItem {
+                self.windowState.syncBodyWithItem(item)
+            }
         }
         .alert(
             String(localized: "Unsaved Changes", comment: "Unsaved changes alert title"),
             isPresented: self.$showingUnsavedAlert
         ) {
             Button(String(localized: "Save", comment: "Save button")) {
-                self.appState.saveBodyChanges()
+                self.windowState.saveBodyChanges()
                 self.commitPendingSelection()
             }
             Button(String(localized: "Discard", comment: "Discard button"), role: .destructive) {
-                self.appState.discardBodyChanges()
+                self.windowState.discardBodyChanges()
                 self.commitPendingSelection()
             }
             Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
@@ -67,38 +73,38 @@ struct ItemDetailView: View {
 
     private func handleSelectionChange(from _: String?, to newID: String?) {
         // If selecting the same item we're already editing, do nothing
-        if newID == self.appState.editingBodyItemID {
+        if newID == self.windowState.editingBodyItemID {
             return
         }
 
         // If there are unsaved changes and we're switching to a different item
-        if self.appState.hasUnsavedBodyChanges {
+        if self.windowState.hasUnsavedBodyChanges {
             self.pendingItemID = newID
             self.showingUnsavedAlert = true
-        } else if let newID, let item = self.appState.currentProjectState?.item(withID: newID) {
+        } else if let newID, let item = self.windowState.currentProjectState?.item(withID: newID) {
             // No unsaved changes, just start editing the new item
-            self.appState.startEditingBody(for: item)
+            self.windowState.startEditingBody(for: item)
         } else {
             // Selection cleared
-            self.appState.clearBodyEditing()
+            self.windowState.clearBodyEditing()
         }
     }
 
     private func commitPendingSelection() {
         if
             let pendingID = self.pendingItemID,
-            let item = self.appState.currentProjectState?.item(withID: pendingID)
+            let item = self.windowState.currentProjectState?.item(withID: pendingID)
         {
-            self.appState.startEditingBody(for: item)
+            self.windowState.startEditingBody(for: item)
         } else {
-            self.appState.clearBodyEditing()
+            self.windowState.clearBodyEditing()
         }
         self.pendingItemID = nil
     }
 
     private func revertSelection() {
         // Revert selection back to the item we were editing
-        self.appState.selectedItemID = self.appState.editingBodyItemID
+        self.windowState.selectedItemID = self.windowState.editingBodyItemID
         self.pendingItemID = nil
     }
 
@@ -222,7 +228,7 @@ struct ItemDetailView: View {
         self.isProcessing = true
         Task {
             do {
-                try await self.appState.closeSelectedItem()
+                try await self.windowState.closeSelectedItem()
             } catch {
                 DZErrorLog(error)
             }
@@ -234,7 +240,7 @@ struct ItemDetailView: View {
         self.isProcessing = true
         Task {
             do {
-                try await self.appState.reopenSelectedItem()
+                try await self.windowState.reopenSelectedItem()
             } catch {
                 DZErrorLog(error)
             }
@@ -245,5 +251,5 @@ struct ItemDetailView: View {
 
 #Preview {
     ItemDetailView()
-        .environment(AppState())
+        .environment(WindowState(services: AppServices()))
 }
