@@ -17,6 +17,8 @@ struct AttachmentSection: View {
     @State private var showingURLAlert = false
     @State private var urlText = ""
     @State private var isProcessing = false
+    @State private var selectedIndices: Set<Int> = []
+    @State private var lastSelectedIndex: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -27,10 +29,30 @@ struct AttachmentSection: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(self.item.attachments, id: \.self) { attachment in
-                    self.attachmentRow(attachment)
+                ForEach(Array(self.item.attachments.enumerated()), id: \.offset) { index, attachment in
+                    self.attachmentRow(attachment, at: index)
                 }
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            self.selectedIndices.removeAll()
+            self.lastSelectedIndex = nil
+        }
+        .dropDestination(for: URL.self) { urls, _ in
+            let fileURLs = urls.filter(\.isFileURL)
+            guard !fileURLs.isEmpty else { return false }
+            self.addFiles(fileURLs)
+            return true
+        }
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(keys: [.delete], phases: .down) { keyPress in
+            if keyPress.modifiers.contains(.command) {
+                self.deleteSelectedAttachments()
+                return .handled
+            }
+            return .ignored
         }
         .alert(
             String(localized: "Add URL", comment: "Add URL alert title"),
@@ -87,35 +109,129 @@ struct AttachmentSection: View {
         }
     }
 
-    private func attachmentRow(_ attachment: String) -> some View {
-        let index = self.item.attachments.firstIndex(of: attachment) ?? 0
+    private func attachmentRow(_ attachment: String, at index: Int) -> some View {
+        let isSelected = self.selectedIndices.contains(index)
 
         return HStack(spacing: 8) {
-            Image(systemName: self.isURL(attachment) ? "link.circle" : "doc")
-                .foregroundStyle(.secondary)
-
             Text(self.displayName(for: attachment))
                 .lineLimit(1)
                 .truncationMode(.middle)
+                .foregroundStyle(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : .primary)
 
             Spacer()
-
-            Button {
-                self.removeAttachment(at: index)
-            } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .disabled(self.isProcessing)
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 8)
-        .background(Color.gray.opacity(0.1))
+        .background(isSelected ? Color(nsColor: .selectedContentBackgroundColor) : Color.gray.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .contentShape(Rectangle())
         .onTapGesture {
-            self.openAttachment(attachment)
+            self.handleSelection(at: index, with: NSEvent.modifierFlags)
+        }
+        .simultaneousGesture(
+            TapGesture(count: 2)
+                .onEnded {
+                    self.openAttachment(attachment)
+                }
+        )
+        .contextMenu {
+            if !self.isURL(attachment) {
+                Button {
+                    self.revealInFinder(attachment)
+                } label: {
+                    Text(String(localized: "Show in Finder", comment: "Context menu item to reveal file in Finder"))
+                }
+            }
+
+            Button {
+                self.copyPath(attachment)
+            } label: {
+                if self.isURL(attachment) {
+                    Text(String(localized: "Copy URL", comment: "Context menu item to copy URL"))
+                } else {
+                    Text(String(localized: "Copy File Path", comment: "Context menu item to copy file path"))
+                }
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                if self.selectedIndices.contains(index), self.selectedIndices.count > 1 {
+                    self.deleteSelectedAttachments()
+                } else {
+                    self.removeAttachment(at: index)
+                }
+            } label: {
+                if self.selectedIndices.contains(index), self.selectedIndices.count > 1 {
+                    Text(String(
+                        localized: "Delete \(self.selectedIndices.count) Items",
+                        comment: "Context menu item to delete multiple attachments"
+                    ))
+                } else {
+                    Text(String(localized: "Delete", comment: "Context menu item to delete attachment"))
+                }
+            }
+        }
+    }
+
+    private func handleSelection(at index: Int, with modifiers: NSEvent.ModifierFlags) {
+        if modifiers.contains(.command) {
+            // Cmd+Click: Toggle selection
+            if self.selectedIndices.contains(index) {
+                self.selectedIndices.remove(index)
+            } else {
+                self.selectedIndices.insert(index)
+            }
+            self.lastSelectedIndex = index
+        } else if modifiers.contains(.shift), let lastIndex = self.lastSelectedIndex {
+            // Shift+Click: Range selection
+            let range = min(lastIndex, index)...max(lastIndex, index)
+            for i in range {
+                self.selectedIndices.insert(i)
+            }
+        } else {
+            // Plain click: Single selection
+            self.selectedIndices = [index]
+            self.lastSelectedIndex = index
+        }
+    }
+
+    private func revealInFinder(_ attachment: String) {
+        let itemDirectory = self.item.filePath.deletingLastPathComponent()
+        let fileURL = itemDirectory.appendingPathComponent(attachment)
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+        }
+    }
+
+    private func copyPath(_ attachment: String) {
+        let textToCopy: String
+        if self.isURL(attachment) {
+            textToCopy = attachment
+        } else {
+            let itemDirectory = self.item.filePath.deletingLastPathComponent()
+            let fileURL = itemDirectory.appendingPathComponent(attachment)
+            textToCopy = fileURL.path
+        }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(textToCopy, forType: .string)
+    }
+
+    private func deleteSelectedAttachments() {
+        guard !self.selectedIndices.isEmpty, !self.isProcessing else { return }
+
+        self.isProcessing = true
+        Task {
+            do {
+                // CLI uses 1-based indices
+                let indices = self.selectedIndices.map { $0 + 1 }
+                try await self.windowState.currentProjectState?.removeAttachments(at: indices, from: self.item)
+            } catch {
+                DZErrorLog(error)
+            }
+            self.selectedIndices.removeAll()
+            self.lastSelectedIndex = nil
+            self.isProcessing = false
         }
     }
 
@@ -154,16 +270,21 @@ struct AttachmentSection: View {
 
     private func pickFile() {
         let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
 
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard panel.runModal() == .OK, !panel.urls.isEmpty else { return }
 
+        self.addFiles(panel.urls)
+    }
+
+    private func addFiles(_ urls: [URL]) {
         self.isProcessing = true
         Task {
             do {
-                try await self.windowState.currentProjectState?.addAttachment(url.path, to: self.item)
+                let paths = urls.map(\.path)
+                try await self.windowState.currentProjectState?.addAttachments(paths, to: self.item)
             } catch {
                 DZErrorLog(error)
             }

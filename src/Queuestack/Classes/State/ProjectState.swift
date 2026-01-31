@@ -180,7 +180,7 @@ final class ProjectState {
     func updateBody(of item: Item, to newBody: String) throws {
         try self.service.updateBody(of: item, to: newBody)
 
-        // Update the in-memory item
+        // Update the in-memory item immediately
         var updatedItem = item
         updatedItem.body = newBody
         self.updateOrAddItem(updatedItem)
@@ -188,27 +188,27 @@ final class ProjectState {
 
     func closeItem(_ item: Item) async throws {
         try await self.service.close(item: item, in: self.project)
-        await self.refresh()
+        await self.refreshItems(at: [item.filePath.path])
     }
 
     func reopenItem(_ item: Item) async throws {
         try await self.service.reopen(item: item, in: self.project)
-        await self.refresh()
+        await self.refreshItems(at: [item.filePath.path])
     }
 
     func addLabels(_ labels: [String], to item: Item) async throws {
         try await self.service.addLabels(labels, to: item, in: self.project)
-        await self.refresh()
+        await self.refreshItems(at: [item.filePath.path])
     }
 
     func removeLabels(_ labels: [String], from item: Item) async throws {
         try await self.service.removeLabels(labels, from: item, in: self.project)
-        await self.refresh()
+        await self.refreshItems(at: [item.filePath.path])
     }
 
     func updateCategory(of item: Item, to category: String?) async throws {
         try await self.service.updateCategory(of: item, to: category, in: self.project)
-        await self.refresh()
+        await self.refreshItems(at: [item.filePath.path])
     }
 
     func updateTitle(of item: Item, to newTitle: String) async throws -> Item {
@@ -221,12 +221,27 @@ final class ProjectState {
 
     func addAttachment(_ attachment: String, to item: Item) async throws {
         try await self.service.addAttachment(attachment, to: item, in: self.project)
-        await self.refresh()
+        await self.refreshItems(at: [item.filePath.path])
+    }
+
+    func addAttachments(_ attachments: [String], to item: Item) async throws {
+        for attachment in attachments {
+            try await self.service.addAttachment(attachment, to: item, in: self.project)
+        }
+        await self.refreshItems(at: [item.filePath.path])
     }
 
     func removeAttachment(at index: Int, from item: Item) async throws {
         try await self.service.removeAttachment(at: index, from: item, in: self.project)
-        await self.refresh()
+        await self.refreshItems(at: [item.filePath.path])
+    }
+
+    func removeAttachments(at indices: [Int], from item: Item) async throws {
+        // Delete in reverse order to maintain correct indices
+        for index in indices.sorted(by: >) {
+            try await self.service.removeAttachment(at: index, from: item, in: self.project)
+        }
+        await self.refreshItems(at: [item.filePath.path])
     }
 
     // MARK: - Search

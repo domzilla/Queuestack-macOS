@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Attachment support in item detail view with URL and file attachment management
 
 ### Changed
+- Attachment list now supports Finder-like multi-selection (Cmd+Click toggle, Shift+Click range)
+- Single click selects attachment, double-click opens it, click empty space deselects
+- Context menu on attachments: Show in Finder, Copy File Path/URL, Delete
+- Cmd+Backspace deletes selected attachments
+- File picker now supports multiple selection
+- Drag and drop files onto attachments section to add them
+- Single-item mutations use incremental refresh instead of full list reload
+- Selection uses native macOS selection colors
+- Removed inline trash button, document icon, and focus ring from attachment rows
 - Split state architecture: AppServices (shared) and WindowState (per-window) for multi-window support
 - Body editing state managed at WindowState level for cleaner architecture
 - Body saves on Cmd+S, item switch, or view disappear instead of auto-save while typing
