@@ -15,7 +15,7 @@ final class FSEventWatcher: @unchecked Sendable {
     // All mutable state is protected by the lock
     private nonisolated(unsafe) var streamRef: FSEventStreamRef?
     private nonisolated(unsafe) var watchedPath: URL?
-    private nonisolated(unsafe) var onChange: (@MainActor () -> Void)?
+    private nonisolated(unsafe) var onChange: (@MainActor (_ changedPaths: [String]) -> Void)?
     private let lock = NSLock()
 
     private let latency: CFTimeInterval = 0.3
@@ -36,7 +36,7 @@ final class FSEventWatcher: @unchecked Sendable {
 
     /// Start watching a directory for changes
     @MainActor
-    func start(path: URL, onChange: @escaping @MainActor () -> Void) {
+    func start(path: URL, onChange: @escaping @MainActor (_ changedPaths: [String]) -> Void) {
         // Stop any existing watcher
         self.stopStreamSync()
 
@@ -128,27 +128,26 @@ final class FSEventWatcher: @unchecked Sendable {
 
         guard let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] else { return }
 
-        // Check if any markdown file was affected
-        var hasRelevantChange = false
+        // Collect markdown files that changed
+        var changedMarkdownPaths: [String] = []
         for i in 0..<numEvents {
             let path = paths[i]
             if path.hasSuffix(".md") {
-                hasRelevantChange = true
+                changedMarkdownPaths.append(path)
                 DZLog("FSEvent: \(path)")
-                break
             }
         }
 
-        if hasRelevantChange {
+        if !changedMarkdownPaths.isEmpty {
             let callback = watcher.lock.withLock {
                 watcher.onChange
             }
 
             if callback != nil {
-                DZLog("Triggering refresh callback")
+                DZLog("Triggering refresh callback for \(changedMarkdownPaths.count) file(s)")
                 DispatchQueue.main.async {
                     Task { @MainActor in
-                        callback?()
+                        callback?(changedMarkdownPaths)
                     }
                 }
             }

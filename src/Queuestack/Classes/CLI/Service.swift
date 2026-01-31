@@ -20,6 +20,13 @@ final class Service {
         self.runner = CLIRunner(binaryPath: binaryPath)
     }
 
+    // MARK: - Single Item Read
+
+    /// Read a single item from a file path
+    func readItem(at path: URL, in project: Project) throws -> Item {
+        try self.fileReader.readItem(at: path, project: project)
+    }
+
     // MARK: - List Operations
 
     /// List open items in a project

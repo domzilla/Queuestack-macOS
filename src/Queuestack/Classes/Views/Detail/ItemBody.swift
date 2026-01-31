@@ -15,30 +15,28 @@ struct ItemBody: View {
     let item: Item
 
     @State private var bodyText: String = ""
-    @State private var isSaving = false
     @FocusState private var isFocused: Bool
 
-    private let debounceInterval: TimeInterval = 0.5
-    @State private var saveTask: Task<Void, Never>?
+    private var hasUnsavedChanges: Bool {
+        self.bodyText != self.item.body
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(String(localized: "Body", comment: "Body section header"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Text(String(localized: "Body", comment: "Body section header"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-                Spacer()
-
-                if self.isSaving {
-                    HStack(spacing: 4) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(String(localized: "Saving...", comment: "Saving indicator"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    if self.hasUnsavedChanges {
+                        Circle()
+                            .fill(.orange)
+                            .frame(width: 6, height: 6)
                     }
                 }
+
+                Spacer()
             }
 
             TextEditor(text: self.$bodyText)
@@ -49,48 +47,38 @@ struct ItemBody: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .frame(maxHeight: .infinity)
                 .focused(self.$isFocused)
-                .onChange(of: self.bodyText) { _, newValue in
-                    self.scheduleAutoSave(newValue)
-                }
         }
         .frame(maxHeight: .infinity)
         .onAppear {
             self.bodyText = self.item.body
         }
-        .onChange(of: self.item.id) { _, _ in
+        .onDisappear {
+            self.saveIfNeeded()
+        }
+        .onChange(of: self.item.id) { oldID, newID in
+            // Save previous item before switching
+            if oldID != newID {
+                self.saveIfNeeded()
+            }
             self.bodyText = self.item.body
         }
-    }
-
-    private func scheduleAutoSave(_ newBody: String) {
-        // Cancel any pending save
-        self.saveTask?.cancel()
-
-        // Don't save if content hasn't actually changed from the item
-        guard newBody != self.item.body else { return }
-
-        // Schedule new save after debounce interval
-        self.saveTask = Task {
-            try? await Task.sleep(for: .seconds(self.debounceInterval))
-
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                self.performSave(newBody)
+        .onKeyPress(phases: .down) { press in
+            if press.key == "s", press.modifiers.contains(.command) {
+                self.saveIfNeeded()
+                return .handled
             }
+            return .ignored
         }
     }
 
-    private func performSave(_ newBody: String) {
-        self.isSaving = true
+    private func saveIfNeeded() {
+        guard self.hasUnsavedChanges else { return }
 
         do {
-            try self.appState.currentProjectState?.updateBody(of: self.item, to: newBody)
+            try self.appState.currentProjectState?.updateBody(of: self.item, to: self.bodyText)
         } catch {
             DZErrorLog(error)
         }
-
-        self.isSaving = false
     }
 }
 

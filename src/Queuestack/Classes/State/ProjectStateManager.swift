@@ -52,12 +52,12 @@ final class ProjectStateManager {
 
         self.watchedProjectID = project.id
 
-        self.watcher.start(path: project.stackURL) { [weak self] in
+        self.watcher.start(path: project.stackURL) { [weak self] changedPaths in
             guard let self else { return }
             Task { @MainActor in
-                DZLog("File change detected, refreshing project")
+                DZLog("File change detected for \(changedPaths.count) file(s)")
                 if let state = self.states[project.id] {
-                    await state.refresh()
+                    await state.refreshItems(at: changedPaths)
                 }
             }
         }

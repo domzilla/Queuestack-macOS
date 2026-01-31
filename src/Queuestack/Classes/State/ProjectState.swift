@@ -71,6 +71,67 @@ final class ProjectState {
         await self.loadItems()
     }
 
+    /// Refresh only specific items that changed (incremental update)
+    func refreshItems(at paths: [String]) async {
+        DZLog("refreshItems(at:) for \(paths.count) path(s)")
+
+        for pathString in paths {
+            let fileURL = URL(filePath: pathString)
+
+            // Check if file still exists
+            if FileManager.default.fileExists(atPath: pathString) {
+                // File exists - read and update/add
+                do {
+                    let updatedItem = try self.service.readItem(at: fileURL, in: self.project)
+                    self.updateOrAddItem(updatedItem)
+                    DZLog("Updated item: \(updatedItem.id)")
+                } catch {
+                    DZLog("Failed to read item at \(pathString): \(error)")
+                }
+            } else {
+                // File was deleted - remove from arrays
+                self.removeItem(at: fileURL)
+                DZLog("Removed item at: \(pathString)")
+            }
+        }
+
+        // Recompute labels and categories
+        self.computeLabelsAndCategories()
+    }
+
+    private func updateOrAddItem(_ item: Item) {
+        // Determine which array the item belongs to
+        if item.isTemplate {
+            if let index = self.templateItems.firstIndex(where: { $0.id == item.id }) {
+                self.templateItems[index] = item
+            } else {
+                self.templateItems.append(item)
+            }
+        } else if item.status == .closed {
+            // Remove from open if it was there (status changed)
+            self.openItems.removeAll { $0.id == item.id }
+            if let index = self.closedItems.firstIndex(where: { $0.id == item.id }) {
+                self.closedItems[index] = item
+            } else {
+                self.closedItems.append(item)
+            }
+        } else {
+            // Remove from closed if it was there (status changed)
+            self.closedItems.removeAll { $0.id == item.id }
+            if let index = self.openItems.firstIndex(where: { $0.id == item.id }) {
+                self.openItems[index] = item
+            } else {
+                self.openItems.append(item)
+            }
+        }
+    }
+
+    private func removeItem(at fileURL: URL) {
+        self.openItems.removeAll { $0.filePath == fileURL }
+        self.closedItems.removeAll { $0.filePath == fileURL }
+        self.templateItems.removeAll { $0.filePath == fileURL }
+    }
+
     private func computeLabelsAndCategories() {
         // Compute labels
         var labelCounts: [String: Int] = [:]
