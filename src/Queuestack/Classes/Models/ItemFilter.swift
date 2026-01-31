@@ -12,15 +12,18 @@ struct ItemFilter: Equatable {
     var mode: FilterMode
     var searchQuery: String
     var sortOrder: SortOrder
+    var category: String?
 
     init(
         mode: FilterMode = .open,
         searchQuery: String = "",
-        sortOrder: SortOrder = .id
+        sortOrder: SortOrder = .id,
+        category: String? = nil
     ) {
         self.mode = mode
         self.searchQuery = searchQuery
         self.sortOrder = sortOrder
+        self.category = category
     }
 
     enum FilterMode: String, CaseIterable {
@@ -56,6 +59,13 @@ extension ItemFilter {
             if item.status != .closed { return false }
         case .templates:
             if !item.isTemplate { return false }
+        }
+
+        // Category filter
+        if let filterCategory = self.category {
+            if item.category != filterCategory {
+                return false
+            }
         }
 
         // Search filter

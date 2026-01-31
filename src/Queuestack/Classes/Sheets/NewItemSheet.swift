@@ -18,8 +18,8 @@ struct NewItemSheet: View {
     @State private var title = ""
     @State private var selectedLabels: Set<String> = []
     @State private var selectedCategory: String?
-    @State private var newLabelText = ""
     @State private var newCategoryText = ""
+    @State private var newLabelText = ""
     @State private var isCreating = false
     @State private var errorMessage: String?
 
@@ -152,45 +152,67 @@ struct NewItemSheet: View {
         .buttonStyle(.plain)
     }
 
+    // NOTE: Using custom radio buttons instead of Picker with .radioGroup style
+    // because we need mutual exclusion between radio selection and text field:
+    // - Typing in text field clears radio selection
+    // - Selecting a radio option clears text field
+    // Native Picker doesn't support this interaction pattern.
     @ViewBuilder
     private var categoryContent: some View {
         let existingCategories = self.appState.currentProjectState?.categories ?? []
 
         // None option
-        self.categoryOption(nil, label: String(localized: "None", comment: "No category option"))
+        self.noneOption
 
-        // Existing categories
+        // Existing categories as radio buttons
         ForEach(existingCategories) { category in
-            self.categoryOption(category.name, label: category.name)
+            self.categoryOption(category.name)
         }
 
-        // New category input
-        HStack {
-            TextField(
-                String(localized: "New category...", comment: "New category placeholder"),
-                text: self.$newCategoryText
-            )
-            .textFieldStyle(.roundedBorder)
-
-            Button(String(localized: "Add", comment: "Add category button")) {
-                self.addNewCategory()
+        // New category text field
+        TextField(
+            String(localized: "New category...", comment: "New category placeholder"),
+            text: self.$newCategoryText
+        )
+        .textFieldStyle(.roundedBorder)
+        .onChange(of: self.newCategoryText) { _, newValue in
+            if !newValue.isEmpty {
+                self.selectedCategory = nil
             }
-            .disabled(self.newCategoryText.trimmingCharacters(in: .whitespaces).isEmpty)
         }
     }
 
-    @ViewBuilder
-    private func categoryOption(_ category: String?, label: String) -> some View {
-        let isSelected = self.selectedCategory == category
+    private var noneOption: some View {
+        let isSelected = self.selectedCategory == nil && self.newCategoryText.isEmpty
 
-        Button {
-            self.selectedCategory = category
+        return Button {
+            self.selectedCategory = nil
+            self.newCategoryText = ""
         } label: {
             HStack {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                Text(label)
-                    .foregroundStyle(category == nil ? Color.secondary : Color.primary)
+                Text(String(localized: "None", comment: "No category option"))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func categoryOption(_ category: String) -> some View {
+        let isSelected = self.selectedCategory == category
+
+        Button {
+            self.selectedCategory = category
+            self.newCategoryText = ""
+        } label: {
+            HStack {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                Text(category)
                 Spacer()
             }
             .contentShape(Rectangle())
@@ -203,13 +225,6 @@ struct NewItemSheet: View {
         guard !label.isEmpty else { return }
         self.selectedLabels.insert(label)
         self.newLabelText = ""
-    }
-
-    private func addNewCategory() {
-        let category = self.newCategoryText.trimmingCharacters(in: .whitespaces)
-        guard !category.isEmpty else { return }
-        self.selectedCategory = category
-        self.newCategoryText = ""
     }
 
     private func createItem() {
@@ -227,10 +242,12 @@ struct NewItemSheet: View {
                         labels: Array(self.selectedLabels)
                     )
                 } else {
+                    let trimmedNew = self.newCategoryText.trimmingCharacters(in: .whitespaces)
+                    let category = self.selectedCategory ?? (trimmedNew.isEmpty ? nil : trimmedNew)
                     _ = try await self.appState.createItem(
                         title: itemTitle,
                         labels: Array(self.selectedLabels),
-                        category: self.selectedCategory
+                        category: category
                     )
                 }
                 self.dismiss()

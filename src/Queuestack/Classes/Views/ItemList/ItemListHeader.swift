@@ -15,8 +15,12 @@ struct ItemListHeader: View {
         @Bindable var appState = self.appState
 
         VStack(alignment: .leading, spacing: 8) {
-            // Row 1: Filter picker (left-aligned)
-            self.filterPicker
+            // Row 1: Filter picker (left) + Category picker (right)
+            HStack {
+                self.filterPicker
+                Spacer()
+                self.categoryPicker
+            }
 
             // Row 2: Local search field
             HStack {
@@ -60,6 +64,28 @@ struct ItemListHeader: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
+        .fixedSize()
+    }
+
+    private var categoryPicker: some View {
+        let categories = self.appState.currentProjectState?.categories ?? []
+        let isFiltering = self.appState.filter.category != nil
+
+        return Menu {
+            Button(String(localized: "All Categories", comment: "All categories filter option")) {
+                self.appState.filter.category = nil
+            }
+            Divider()
+            ForEach(categories, id: \.name) { category in
+                Button(category.name) {
+                    self.appState.filter.category = category.name
+                }
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease.circle\(isFiltering ? ".fill" : "")")
+                .foregroundStyle(isFiltering ? Color.accentColor : .secondary)
+        }
+        .menuStyle(.borderlessButton)
         .fixedSize()
     }
 }
