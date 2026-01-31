@@ -45,9 +45,6 @@ struct ItemListHeader: View {
             .padding(6)
             .background(.quaternary)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-
-            // Row 3: Column headers
-            self.columnHeaders
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -68,49 +65,6 @@ struct ItemListHeader: View {
                     .truncationMode(.middle)
             }
         }
-    }
-
-    private var columnHeaders: some View {
-        @Bindable var appState = self.appState
-
-        // Minimum space reserved for title column
-        let minTitleWidth: CGFloat = 100
-        // Spacing between columns (resize handle width)
-        let columnSpacing: CGFloat = 13
-
-        return GeometryReader { geometry in
-            let availableWidth = geometry.size.width - 16 // Account for horizontal padding
-            let maxCategoryWidth = availableWidth - appState.labelsColumnWidth - minTitleWidth - (columnSpacing * 2)
-            let maxLabelsWidth = availableWidth - appState.categoryColumnWidth - minTitleWidth - (columnSpacing * 2)
-
-            HStack(spacing: 0) {
-                Text(String(localized: "Category", comment: "Column header for category"))
-                    .frame(width: appState.categoryColumnWidth, alignment: .leading)
-
-                ColumnResizeHandle(
-                    width: $appState.categoryColumnWidth,
-                    minWidth: 60,
-                    maxWidth: max(60, maxCategoryWidth)
-                )
-
-                Text(String(localized: "Title", comment: "Column header for title"))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                ColumnResizeHandle(
-                    width: $appState.labelsColumnWidth,
-                    minWidth: 60,
-                    maxWidth: max(60, maxLabelsWidth),
-                    inverted: true
-                )
-
-                Text(String(localized: "Labels", comment: "Column header for labels"))
-                    .frame(width: appState.labelsColumnWidth, alignment: .leading)
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-        }
-        .frame(height: 20)
     }
 
     private var filterButtons: some View {
@@ -136,44 +90,6 @@ struct ItemListHeader: View {
                 self.appState.filter.mode = .templates
             }
         }
-    }
-}
-
-private struct ColumnResizeHandle: View {
-    @Binding var width: CGFloat
-    let minWidth: CGFloat
-    let maxWidth: CGFloat
-    var inverted: Bool = false
-
-    @State private var isDragging = false
-    @State private var isHovering = false
-
-    var body: some View {
-        Rectangle()
-            .fill(Color.secondary.opacity(self.isDragging || self.isHovering ? 0.5 : 0.3))
-            .frame(width: 1, height: 12)
-            .padding(.horizontal, 6)
-            .contentShape(Rectangle().size(width: 13, height: 20))
-            .onHover { hovering in
-                self.isHovering = hovering
-                if hovering {
-                    NSCursor.resizeLeftRight.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        self.isDragging = true
-                        let delta = self.inverted ? -value.translation.width : value.translation.width
-                        let newWidth = self.width + delta
-                        self.width = min(max(newWidth, self.minWidth), self.maxWidth)
-                    }
-                    .onEnded { _ in
-                        self.isDragging = false
-                    }
-            )
     }
 }
 

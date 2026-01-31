@@ -14,14 +14,38 @@ struct ItemTable: View {
     var body: some View {
         @Bindable var appState = self.appState
 
-        List(self.appState.filteredItems, selection: $appState.selectedItemID) { item in
-            ItemRow(item: item)
-                .listRowSeparator(.hidden)
-                .contextMenu {
-                    self.itemContextMenu(item)
-                }
+        Table(self.appState.filteredItems, selection: $appState.selectedItemID) {
+            TableColumn(String(localized: "Category", comment: "Column header for category")) { item in
+                Text(item.category ?? "—")
+                    .foregroundStyle(item.category != nil ? .secondary : .quaternary)
+                    .padding(.vertical, 4)
+            }
+            .width(min: 60, ideal: 80, max: 150)
+
+            TableColumn(String(localized: "Title", comment: "Column header for title")) { item in
+                Text(item.title)
+                    .lineLimit(1)
+                    .padding(.vertical, 4)
+            }
+
+            TableColumn(String(localized: "Labels", comment: "Column header for labels")) { item in
+                Text(item.labels.isEmpty ? "—" : item.labels.joined(separator: ", "))
+                    .foregroundStyle(item.labels.isEmpty ? .quaternary : .secondary)
+                    .lineLimit(1)
+                    .padding(.vertical, 4)
+            }
+            .width(min: 60, ideal: 100, max: 200)
         }
-        .listStyle(.plain)
+        .tableStyle(.inset)
+        .alternatingRowBackgrounds(.disabled)
+        .contextMenu(forSelectionType: String.self) { selectedIDs in
+            if
+                let itemID = selectedIDs.first,
+                let item = self.appState.currentProjectState?.item(withID: itemID)
+            {
+                self.itemContextMenu(item)
+            }
+        }
     }
 
     @ViewBuilder
@@ -63,45 +87,6 @@ struct ItemTable: View {
                 systemImage: "folder"
             )
         }
-    }
-}
-
-struct ItemRow: View {
-    @Environment(AppState.self) private var appState
-    let item: Item
-
-    // Match header resize handle spacing: 1px line + 6px padding each side = 13px
-    private let columnSpacing: CGFloat = 13
-
-    var body: some View {
-        HStack(spacing: 0) {
-            // Category
-            Text(self.item.category ?? "—")
-                .font(.caption)
-                .foregroundStyle(self.item.category != nil ? .secondary : .quaternary)
-                .frame(width: self.appState.categoryColumnWidth, alignment: .leading)
-
-            Spacer()
-                .frame(width: self.columnSpacing)
-
-            // Title
-            Text(self.item.title)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Spacer()
-                .frame(width: self.columnSpacing)
-
-            // Labels
-            Text(self.item.labels.isEmpty ? "—" : self.item.labels.joined(separator: ", "))
-                .font(.caption)
-                .foregroundStyle(self.item.labels.isEmpty ? .quaternary : .secondary)
-                .lineLimit(1)
-                .frame(width: self.appState.labelsColumnWidth, alignment: .leading)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .tag(self.item.id)
     }
 }
 
