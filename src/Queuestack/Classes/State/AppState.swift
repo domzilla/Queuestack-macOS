@@ -24,6 +24,19 @@ final class AppState {
     var selectedProjectID: UUID?
     var selectedItemID: String?
 
+    // MARK: - Body Editing State
+
+    /// The item ID whose body is currently being edited
+    private(set) var editingBodyItemID: String?
+    /// The current body text being edited
+    var editingBodyText: String = ""
+    /// The last saved body text (to detect unsaved changes)
+    private(set) var savedBodyText: String = ""
+
+    var hasUnsavedBodyChanges: Bool {
+        self.editingBodyItemID != nil && self.editingBodyText != self.savedBodyText
+    }
+
     /// Call this when project selection changes (use .onChange in views)
     func handleProjectSelectionChange() {
         self.onProjectSelectionChanged()
@@ -104,6 +117,43 @@ final class AppState {
 
     func clearItemSelection() {
         self.selectedItemID = nil
+    }
+
+    // MARK: - Body Editing
+
+    /// Start editing an item's body
+    func startEditingBody(for item: Item) {
+        self.editingBodyItemID = item.id
+        self.editingBodyText = item.body
+        self.savedBodyText = item.body
+    }
+
+    /// Save the current body changes
+    func saveBodyChanges() {
+        guard
+            self.hasUnsavedBodyChanges,
+            let itemID = self.editingBodyItemID,
+            let projectState = self.currentProjectState,
+            let item = projectState.item(withID: itemID) else { return }
+
+        do {
+            try projectState.updateBody(of: item, to: self.editingBodyText)
+            self.savedBodyText = self.editingBodyText
+        } catch {
+            DZErrorLog(error)
+        }
+    }
+
+    /// Discard body changes and revert to saved state
+    func discardBodyChanges() {
+        self.editingBodyText = self.savedBodyText
+    }
+
+    /// Clear body editing state (when switching items after save/discard)
+    func clearBodyEditing() {
+        self.editingBodyItemID = nil
+        self.editingBodyText = ""
+        self.savedBodyText = ""
     }
 
     private func onProjectSelectionChanged() {

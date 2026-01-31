@@ -11,17 +11,11 @@ import SwiftUI
 
 struct ItemBody: View {
     @Environment(AppState.self) private var appState
-
-    let item: Item
-
-    @State private var bodyText: String = ""
     @FocusState private var isFocused: Bool
 
-    private var hasUnsavedChanges: Bool {
-        self.bodyText != self.item.body
-    }
-
     var body: some View {
+        @Bindable var appState = self.appState
+
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 HStack(spacing: 4) {
@@ -29,17 +23,26 @@ struct ItemBody: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    if self.hasUnsavedChanges {
+                    if self.appState.hasUnsavedBodyChanges {
                         Circle()
                             .fill(.orange)
                             .frame(width: 6, height: 6)
+
+                        Button {
+                            self.appState.discardBodyChanges()
+                        } label: {
+                            Text(String(localized: "Discard", comment: "Discard changes button"))
+                                .font(.caption)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.orange)
                     }
                 }
 
                 Spacer()
             }
 
-            TextEditor(text: self.$bodyText)
+            TextEditor(text: $appState.editingBodyText)
                 .font(.body)
                 .scrollContentBackground(.hidden)
                 .padding(8)
@@ -49,41 +52,18 @@ struct ItemBody: View {
                 .focused(self.$isFocused)
         }
         .frame(maxHeight: .infinity)
-        .onAppear {
-            self.bodyText = self.item.body
-        }
-        .onDisappear {
-            self.saveIfNeeded()
-        }
-        .onChange(of: self.item.id) { oldID, newID in
-            // Save previous item before switching
-            if oldID != newID {
-                self.saveIfNeeded()
-            }
-            self.bodyText = self.item.body
-        }
         .onKeyPress(phases: .down) { press in
             if press.key == "s", press.modifiers.contains(.command) {
-                self.saveIfNeeded()
+                self.appState.saveBodyChanges()
                 return .handled
             }
             return .ignored
         }
     }
-
-    private func saveIfNeeded() {
-        guard self.hasUnsavedChanges else { return }
-
-        do {
-            try self.appState.currentProjectState?.updateBody(of: self.item, to: self.bodyText)
-        } catch {
-            DZErrorLog(error)
-        }
-    }
 }
 
 #Preview {
-    ItemBody(item: Item.placeholder())
+    ItemBody()
         .environment(AppState())
         .padding()
 }

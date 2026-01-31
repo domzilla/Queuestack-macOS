@@ -13,16 +13,93 @@ struct ItemDetailView: View {
     @Environment(AppState.self) private var appState
 
     @State private var showingEditSheet = false
+    @State private var showingUnsavedAlert = false
+    @State private var pendingItemID: String?
     @State private var isProcessing = false
+
+    /// The item to display - either the editing item or selected item
+    private var displayedItem: Item? {
+        // If we're editing an item and there are unsaved changes, show that item
+        if
+            let editingID = self.appState.editingBodyItemID,
+            self.appState.hasUnsavedBodyChanges,
+            let item = self.appState.currentProjectState?.item(withID: editingID)
+        {
+            return item
+        }
+        // Otherwise show the selected item
+        return self.appState.selectedItem
+    }
 
     var body: some View {
         SwiftUI.Group {
-            if let item = self.appState.selectedItem {
+            if let item = self.displayedItem {
                 self.detailContent(item)
             } else {
                 Color.clear
             }
         }
+        .onChange(of: self.appState.selectedItemID) { oldID, newID in
+            self.handleSelectionChange(from: oldID, to: newID)
+        }
+        .alert(
+            String(localized: "Unsaved Changes", comment: "Unsaved changes alert title"),
+            isPresented: self.$showingUnsavedAlert
+        ) {
+            Button(String(localized: "Save", comment: "Save button")) {
+                self.appState.saveBodyChanges()
+                self.commitPendingSelection()
+            }
+            Button(String(localized: "Discard", comment: "Discard button"), role: .destructive) {
+                self.appState.discardBodyChanges()
+                self.commitPendingSelection()
+            }
+            Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
+                self.revertSelection()
+            }
+        } message: {
+            Text(String(
+                localized: "Do you want to save your changes?",
+                comment: "Unsaved changes alert message"
+            ))
+        }
+    }
+
+    private func handleSelectionChange(from _: String?, to newID: String?) {
+        // If selecting the same item we're already editing, do nothing
+        if newID == self.appState.editingBodyItemID {
+            return
+        }
+
+        // If there are unsaved changes and we're switching to a different item
+        if self.appState.hasUnsavedBodyChanges {
+            self.pendingItemID = newID
+            self.showingUnsavedAlert = true
+        } else if let newID, let item = self.appState.currentProjectState?.item(withID: newID) {
+            // No unsaved changes, just start editing the new item
+            self.appState.startEditingBody(for: item)
+        } else {
+            // Selection cleared
+            self.appState.clearBodyEditing()
+        }
+    }
+
+    private func commitPendingSelection() {
+        if
+            let pendingID = self.pendingItemID,
+            let item = self.appState.currentProjectState?.item(withID: pendingID)
+        {
+            self.appState.startEditingBody(for: item)
+        } else {
+            self.appState.clearBodyEditing()
+        }
+        self.pendingItemID = nil
+    }
+
+    private func revertSelection() {
+        // Revert selection back to the item we were editing
+        self.appState.selectedItemID = self.appState.editingBodyItemID
+        self.pendingItemID = nil
     }
 
     @ViewBuilder
@@ -36,7 +113,7 @@ struct ItemDetailView: View {
             // Resizable split between body and attachments
             VSplitView {
                 // Body section (TextEditor is already scrollable)
-                ItemBody(item: item)
+                ItemBody()
                     .padding()
 
                 // Attachments section
