@@ -24,14 +24,24 @@ final class Service {
 
     /// List open items in a project
     func listOpenItems(in project: Project) async throws -> [Item] {
+        DZLog("listOpenItems in project: \(project.path.path)")
         let args = ["list", "--open", "--no-interactive"]
         let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
 
+        DZLog("CLI stdout: \(result.stdout)")
+        DZLog("CLI stderr: \(result.stderr)")
+        DZLog("CLI exit: \(result.exitCode)")
+
         if let error = result.error {
+            DZLog("CLI error: \(error)")
             throw error
         }
 
-        let paths = result.lines.map { project.path.appendingPathComponent($0) }
+        // Filter to only actual file paths (must end with .md)
+        let paths = result.lines
+            .filter { $0.hasSuffix(".md") }
+            .map { project.path.appendingPathComponent($0) }
+        DZLog("Parsed paths: \(paths)")
         return try self.fileReader.readItems(at: paths, project: project)
     }
 
@@ -44,7 +54,10 @@ final class Service {
             throw error
         }
 
-        let paths = result.lines.map { project.path.appendingPathComponent($0) }
+        // Filter to only actual file paths (must end with .md)
+        let paths = result.lines
+            .filter { $0.hasSuffix(".md") }
+            .map { project.path.appendingPathComponent($0) }
         return try self.fileReader.readItems(at: paths, project: project)
     }
 
@@ -57,7 +70,10 @@ final class Service {
             throw error
         }
 
-        let paths = result.lines.map { project.path.appendingPathComponent($0) }
+        // Filter to only actual file paths (must end with .md)
+        let paths = result.lines
+            .filter { $0.hasSuffix(".md") }
+            .map { project.path.appendingPathComponent($0) }
         return try self.fileReader.readItems(at: paths, project: project)
     }
 

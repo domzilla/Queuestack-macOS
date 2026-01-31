@@ -44,11 +44,13 @@ final class ProjectState {
     // MARK: - Loading
 
     func loadItems() async {
+        DZLog("loadItems() starting for project: \(self.project.name)")
         self.isLoading = true
         self.error = nil
 
         do {
             let (open, closed, templates) = try await self.service.loadAllItems(in: self.project)
+            DZLog("Loaded: \(open.count) open, \(closed.count) closed, \(templates.count) templates")
             self.openItems = open
             self.closedItems = closed
             self.templateItems = templates
@@ -57,10 +59,12 @@ final class ProjectState {
             self.computeLabelsAndCategories()
         } catch {
             self.error = error
+            DZLog("loadItems error: \(error)")
             DZErrorLog(error)
         }
 
         self.isLoading = false
+        DZLog("loadItems() finished, isLoading=\(self.isLoading)")
     }
 
     func refresh() async {

@@ -121,31 +121,20 @@ final class FSEventWatcher: @unchecked Sendable {
 
     // MARK: - FSEvents Callback
 
-    private static let eventCallback: FSEventStreamCallback = { _, info, numEvents, eventPaths, eventFlags, _ in
+    private static let eventCallback: FSEventStreamCallback = { _, info, numEvents, eventPaths, _, _ in
         guard let info else { return }
 
         let watcher = Unmanaged<FSEventWatcher>.fromOpaque(info).takeUnretainedValue()
 
-        // Filter to only relevant events (created, removed, renamed, modified)
         guard let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] else { return }
 
+        // Check if any markdown file was affected
         var hasRelevantChange = false
-
         for i in 0..<numEvents {
             let path = paths[i]
-            let flags = eventFlags[i]
-
-            // Skip if it's just an access or stat change
-            let isRelevant =
-                (flags & UInt32(kFSEventStreamEventFlagItemCreated)) != 0 ||
-                (flags & UInt32(kFSEventStreamEventFlagItemRemoved)) != 0 ||
-                (flags & UInt32(kFSEventStreamEventFlagItemRenamed)) != 0 ||
-                (flags & UInt32(kFSEventStreamEventFlagItemModified)) != 0
-
-            // Only care about markdown files
-            if isRelevant, path.hasSuffix(".md") {
+            if path.hasSuffix(".md") {
                 hasRelevantChange = true
-                DZLog("File changed: \(path)")
+                DZLog("FSEvent: \(path)")
                 break
             }
         }
@@ -155,8 +144,13 @@ final class FSEventWatcher: @unchecked Sendable {
                 watcher.onChange
             }
 
-            Task { @MainActor in
-                callback?()
+            if callback != nil {
+                DZLog("Triggering refresh callback")
+                DispatchQueue.main.async {
+                    Task { @MainActor in
+                        callback?()
+                    }
+                }
             }
         }
     }

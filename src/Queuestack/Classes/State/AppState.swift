@@ -21,13 +21,13 @@ final class AppState {
 
     // MARK: - Selection State
 
-    var selectedProjectID: UUID? {
-        didSet {
-            self.onProjectSelectionChanged()
-        }
-    }
-
+    var selectedProjectID: UUID?
     var selectedItemID: String?
+
+    /// Call this when project selection changes (use .onChange in views)
+    func handleProjectSelectionChange() {
+        self.onProjectSelectionChanged()
+    }
 
     // MARK: - Filter State
 
@@ -107,21 +107,27 @@ final class AppState {
     }
 
     private func onProjectSelectionChanged() {
+        DZLog("onProjectSelectionChanged: selectedProjectID=\(String(describing: self.selectedProjectID))")
+
         // Clear item selection when project changes
         self.selectedItemID = nil
 
         // Start watching new project
         if let project = self.selectedProject {
+            DZLog("Selected project: \(project.name) at \(project.path.path)")
             self.projectManager.startWatching(project: project)
 
             // Load items if not already loaded
             let state = self.projectManager.state(for: project)
+            DZLog("State openItems.isEmpty=\(state.openItems.isEmpty), isLoading=\(state.isLoading)")
             if state.openItems.isEmpty, !state.isLoading {
+                DZLog("Starting loadItems task")
                 Task {
                     await state.loadItems()
                 }
             }
         } else {
+            DZLog("No project selected")
             self.projectManager.stopWatching()
         }
     }

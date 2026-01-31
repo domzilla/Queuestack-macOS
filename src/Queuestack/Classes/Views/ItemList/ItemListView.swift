@@ -13,15 +13,18 @@ struct ItemListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ItemListHeader()
-
-            Divider()
-
             if let projectState = self.appState.currentProjectState {
                 self.itemListContent(projectState)
             } else {
                 // Empty state when no project selected
-                Spacer()
+                Color.clear
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            VStack(spacing: 0) {
+                ItemListHeader()
+                Divider()
             }
         }
     }
