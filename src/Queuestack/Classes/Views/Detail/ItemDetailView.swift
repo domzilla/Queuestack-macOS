@@ -161,6 +161,15 @@ struct ItemDetailView: View {
                         .foregroundStyle(.secondary)
                     Text(item.id)
                         .textSelection(.enabled)
+                    Button {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(item.id, forType: .string)
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help(String(localized: "Copy ID to clipboard", comment: "Copy ID button tooltip"))
                 }
                 .font(.caption)
 
