@@ -67,36 +67,40 @@ struct ItemTable: View {
 }
 
 struct ItemRow: View {
+    @Environment(AppState.self) private var appState
     let item: Item
 
+    // Match header resize handle spacing: 1px line + 6px padding each side = 13px
+    private let columnSpacing: CGFloat = 13
+
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 0) {
             // Category
             Text(self.item.category ?? "—")
                 .font(.caption)
                 .foregroundStyle(self.item.category != nil ? .secondary : .quaternary)
-                .frame(width: 80, alignment: .leading)
+                .frame(width: self.appState.categoryColumnWidth, alignment: .leading)
+
+            Spacer()
+                .frame(width: self.columnSpacing)
 
             // Title
             Text(self.item.title)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            Spacer()
+                .frame(width: self.columnSpacing)
+
             // Labels
-            if self.item.labels.isEmpty {
-                Text("—")
-                    .foregroundStyle(.quaternary)
-                    .frame(width: 100, alignment: .trailing)
-            } else {
-                HStack(spacing: 4) {
-                    ForEach(self.item.labels, id: \.self) { label in
-                        LabelBadge(label: label)
-                    }
-                }
-                .frame(width: 100, alignment: .trailing)
-            }
+            Text(self.item.labels.isEmpty ? "—" : self.item.labels.joined(separator: ", "))
+                .font(.caption)
+                .foregroundStyle(self.item.labels.isEmpty ? .quaternary : .secondary)
+                .lineLimit(1)
+                .frame(width: self.appState.labelsColumnWidth, alignment: .leading)
         }
         .padding(.vertical, 6)
+        .padding(.horizontal, 8)
         .tag(self.item.id)
     }
 }

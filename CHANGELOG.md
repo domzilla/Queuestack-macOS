@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Replace colored label badges with plain comma-separated text in item list
+
+### Fixed
+- Restore column headers (Category, Title, Labels) in item list after Table-to-List migration
+
 ### Added
+- Resizable column widths in item list (drag between column headers to resize)
 - Initial implementation of Queuestack macOS app with three-panel UI
 - Project sidebar with nested groups for organizing queuestack projects
 - Item list view with filtering (Open/Closed/Templates) and local search

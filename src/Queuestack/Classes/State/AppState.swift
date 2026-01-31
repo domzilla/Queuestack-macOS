@@ -33,6 +33,11 @@ final class AppState {
 
     var filter = ItemFilter()
 
+    // MARK: - Column Widths
+
+    var categoryColumnWidth: CGFloat = 80
+    var labelsColumnWidth: CGFloat = 100
+
     // MARK: - Global Search
 
     var globalSearchQuery = ""
