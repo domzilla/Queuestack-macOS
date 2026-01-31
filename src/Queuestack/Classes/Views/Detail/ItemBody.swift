@@ -18,12 +18,14 @@ struct ItemBody: View {
 
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                HStack(spacing: 4) {
-                    Text(String(localized: "Body", comment: "Body section header"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Text(String(localized: "Body", comment: "Body section header"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-                    if self.windowState.hasUnsavedBodyChanges {
+                Spacer()
+
+                if self.windowState.hasUnsavedBodyChanges {
+                    HStack(spacing: 6) {
                         Circle()
                             .fill(.orange)
                             .frame(width: 6, height: 6)
@@ -33,13 +35,17 @@ struct ItemBody: View {
                         } label: {
                             Text(String(localized: "Discard", comment: "Discard changes button"))
                                 .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(.orange)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(.orange, lineWidth: 1)
+                        )
                     }
                 }
-
-                Spacer()
             }
 
             TextEditor(text: $windowState.editingBodyText)
