@@ -76,6 +76,9 @@ struct ContentView: View {
         .sheet(isPresented: self.$showingNewTemplateSheet) {
             NewItemSheet(isTemplate: true)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .createNewItem)) { _ in
+            self.showingNewItemSheet = true
+        }
         .onReceive(NotificationCenter.default.publisher(for: .createNewTemplate)) { _ in
             self.showingNewTemplateSheet = true
         }
