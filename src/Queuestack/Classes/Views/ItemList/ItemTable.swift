@@ -18,21 +18,18 @@ struct ItemTable: View {
             TableColumn(String(localized: "Category", comment: "Column header for category")) { item in
                 Text(item.category ?? "—")
                     .foregroundStyle(item.category != nil ? .secondary : .quaternary)
-                    .padding(.vertical, 4)
             }
             .width(min: 60, ideal: 80, max: 150)
 
             TableColumn(String(localized: "Title", comment: "Column header for title")) { item in
                 Text(item.title)
                     .lineLimit(1)
-                    .padding(.vertical, 4)
             }
 
             TableColumn(String(localized: "Labels", comment: "Column header for labels")) { item in
                 Text(item.labels.isEmpty ? "—" : item.labels.joined(separator: ", "))
                     .foregroundStyle(item.labels.isEmpty ? .quaternary : .secondary)
                     .lineLimit(1)
-                    .padding(.vertical, 4)
             }
             .width(min: 60, ideal: 100, max: 200)
         }
