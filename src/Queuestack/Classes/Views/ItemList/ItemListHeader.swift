@@ -49,6 +49,7 @@ struct ItemListHeader: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.bar)
+        .disabled(self.appState.selectedProject == nil)
     }
 
     private var filterPicker: some View {
