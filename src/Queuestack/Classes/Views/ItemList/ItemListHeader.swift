@@ -14,13 +14,9 @@ struct ItemListHeader: View {
     var body: some View {
         @Bindable var appState = self.appState
 
-        VStack(spacing: 8) {
-            // Row 1: Breadcrumb + Filter buttons
-            HStack {
-                self.breadcrumb
-                Spacer()
-                self.filterButtons
-            }
+        VStack(alignment: .leading, spacing: 8) {
+            // Row 1: Filter picker (left-aligned)
+            self.filterPicker
 
             // Row 2: Local search field
             HStack {
@@ -51,64 +47,20 @@ struct ItemListHeader: View {
         .background(.bar)
     }
 
-    @ViewBuilder
-    private var breadcrumb: some View {
-        if let project = self.appState.selectedProject {
-            HStack(spacing: 4) {
-                Image(systemName: "folder.fill")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-                Text(project.path.path)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
+    private var filterPicker: some View {
+        @Bindable var appState = self.appState
+
+        return Picker("", selection: $appState.filter.mode) {
+            Text(String(localized: "Open", comment: "Open filter option"))
+                .tag(ItemFilter.FilterMode.open)
+            Text(String(localized: "Closed", comment: "Closed filter option"))
+                .tag(ItemFilter.FilterMode.closed)
+            Text(String(localized: "Templates", comment: "Templates filter option"))
+                .tag(ItemFilter.FilterMode.templates)
         }
-    }
-
-    private var filterButtons: some View {
-        HStack(spacing: 4) {
-            FilterToggle(
-                title: String(localized: "Open", comment: "Open filter button"),
-                isSelected: self.appState.filter.mode == .open
-            ) {
-                self.appState.filter.mode = .open
-            }
-
-            FilterToggle(
-                title: String(localized: "Closed", comment: "Closed filter button"),
-                isSelected: self.appState.filter.mode == .closed
-            ) {
-                self.appState.filter.mode = .closed
-            }
-
-            FilterToggle(
-                title: String(localized: "Templates", comment: "Templates filter button"),
-                isSelected: self.appState.filter.mode == .templates
-            ) {
-                self.appState.filter.mode = .templates
-            }
-        }
-    }
-}
-
-private struct FilterToggle: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: self.action) {
-            Text(self.title)
-                .font(.caption)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-        }
-        .buttonStyle(.plain)
-        .background(self.isSelected ? Color.accentColor : Color.clear)
-        .foregroundStyle(self.isSelected ? .white : .primary)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
     }
 }
 

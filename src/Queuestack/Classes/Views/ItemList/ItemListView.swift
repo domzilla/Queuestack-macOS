@@ -21,6 +21,8 @@ struct ItemListView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle(self.appState.selectedProject?.name ?? "")
+        .navigationSubtitle(self.appState.selectedProject?.path.path ?? "")
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
                 ItemListHeader()
