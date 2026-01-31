@@ -22,12 +22,13 @@ struct ContentView: View {
             ProjectSidebar()
         } content: {
             ItemListView()
+                .navigationSplitViewColumnWidth(min: 280, ideal: 350, max: 500)
         } detail: {
             ItemDetailView()
         }
         .navigationSplitViewStyle(.balanced)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .navigation) {
                 Button {
                     self.showingNewItemSheet = true
                 } label: {
@@ -38,17 +39,35 @@ struct ContentView: View {
             }
 
             ToolbarItem(placement: .primaryAction) {
-                TextField(
-                    String(localized: "Search globally...", comment: "Global search placeholder"),
-                    text: $appState.globalSearchQuery
-                )
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 200)
-                .onSubmit {
-                    Task {
-                        await self.appState.performGlobalSearch()
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField(
+                        String(localized: "Search globally...", comment: "Global search placeholder"),
+                        text: $appState.globalSearchQuery
+                    )
+                    .textFieldStyle(.plain)
+                    .onSubmit {
+                        Task {
+                            await self.appState.performGlobalSearch()
+                        }
+                    }
+
+                    if !self.appState.globalSearchQuery.isEmpty {
+                        Button {
+                            self.appState.globalSearchQuery = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .frame(width: 180)
+                .background(Color(nsColor: .textBackgroundColor).opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
         .sheet(isPresented: self.$showingNewItemSheet) {

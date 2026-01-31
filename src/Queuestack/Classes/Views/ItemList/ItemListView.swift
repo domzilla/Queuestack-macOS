@@ -12,43 +12,28 @@ struct ItemListView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        SwiftUI.Group {
-            if self.appState.selectedProject == nil {
-                self.noProjectSelectedView
-            } else if let projectState = self.appState.currentProjectState {
-                self.itemListContent(projectState)
-            }
-        }
-    }
-
-    private var noProjectSelectedView: some View {
-        ContentUnavailableView {
-            SwiftUI.Label(
-                String(localized: "No Project Selected", comment: "Empty state title"),
-                systemImage: "folder"
-            )
-        } description: {
-            Text(String(
-                localized: "Select a project from the sidebar or add one to get started.",
-                comment: "Empty state description"
-            ))
-        }
-    }
-
-    @ViewBuilder
-    private func itemListContent(_ projectState: ProjectState) -> some View {
         VStack(spacing: 0) {
             ItemListHeader()
 
             Divider()
 
-            if projectState.isLoading {
-                self.loadingView
-            } else if self.appState.filteredItems.isEmpty {
-                self.emptyStateView
+            if let projectState = self.appState.currentProjectState {
+                self.itemListContent(projectState)
             } else {
-                ItemTable()
+                // Empty state when no project selected
+                Spacer()
             }
+        }
+    }
+
+    @ViewBuilder
+    private func itemListContent(_ projectState: ProjectState) -> some View {
+        if projectState.isLoading {
+            self.loadingView
+        } else if self.appState.filteredItems.isEmpty {
+            self.emptyStateView
+        } else {
+            ItemTable()
         }
     }
 

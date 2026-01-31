@@ -47,7 +47,6 @@ struct ProjectSidebar: View {
 
     private var bottomBar: some View {
         HStack {
-            Spacer()
             Menu {
                 Button {
                     self.targetGroupID = nil
@@ -76,6 +75,7 @@ struct ProjectSidebar: View {
             .menuIndicator(.hidden)
             .fixedSize()
             .padding(8)
+            Spacer()
         }
         .background(.bar)
     }
