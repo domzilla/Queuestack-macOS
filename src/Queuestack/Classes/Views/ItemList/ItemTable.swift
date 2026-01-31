@@ -14,53 +14,14 @@ struct ItemTable: View {
     var body: some View {
         @Bindable var appState = self.appState
 
-        Table(self.appState.filteredItems, selection: $appState.selectedItemID) {
-            TableColumn(String(localized: "Category", comment: "Table column header")) { item in
-                if let category = item.category {
-                    Text(category)
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                } else {
-                    Text("—")
-                        .foregroundStyle(.quaternary)
+        List(self.appState.filteredItems, selection: $appState.selectedItemID) { item in
+            ItemRow(item: item)
+                .listRowSeparator(.hidden)
+                .contextMenu {
+                    self.itemContextMenu(item)
                 }
-            }
-            .width(min: 60, ideal: 100, max: 150)
-
-            TableColumn(String(localized: "Title", comment: "Table column header")) { item in
-                Text(item.title)
-                    .lineLimit(1)
-            }
-            .width(min: 150)
-
-            TableColumn(String(localized: "Labels", comment: "Table column header")) { item in
-                self.labelsView(for: item)
-            }
-            .width(min: 100, ideal: 150, max: 300)
         }
-        .tableStyle(.inset)
-        .alternatingRowBackgrounds(.enabled)
-        .contextMenu(forSelectionType: String.self) { ids in
-            if let id = ids.first, let item = self.appState.currentProjectState?.item(withID: id) {
-                self.itemContextMenu(item)
-            }
-        } primaryAction: { _ in
-            // Double-click opens item (already handled by selection)
-        }
-    }
-
-    @ViewBuilder
-    private func labelsView(for item: Item) -> some View {
-        if item.labels.isEmpty {
-            Text("—")
-                .foregroundStyle(.quaternary)
-        } else {
-            HStack(spacing: 4) {
-                ForEach(item.labels, id: \.self) { label in
-                    LabelBadge(label: label)
-                }
-            }
-        }
+        .listStyle(.plain)
     }
 
     @ViewBuilder
@@ -102,6 +63,41 @@ struct ItemTable: View {
                 systemImage: "folder"
             )
         }
+    }
+}
+
+struct ItemRow: View {
+    let item: Item
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Category
+            Text(self.item.category ?? "—")
+                .font(.caption)
+                .foregroundStyle(self.item.category != nil ? .secondary : .quaternary)
+                .frame(width: 80, alignment: .leading)
+
+            // Title
+            Text(self.item.title)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Labels
+            if self.item.labels.isEmpty {
+                Text("—")
+                    .foregroundStyle(.quaternary)
+                    .frame(width: 100, alignment: .trailing)
+            } else {
+                HStack(spacing: 4) {
+                    ForEach(self.item.labels, id: \.self) { label in
+                        LabelBadge(label: label)
+                    }
+                }
+                .frame(width: 100, alignment: .trailing)
+            }
+        }
+        .padding(.vertical, 6)
+        .tag(self.item.id)
     }
 }
 
