@@ -36,6 +36,14 @@ struct ItemTable: View {
                     .lineLimit(1)
             }
             .width(min: 60, ideal: 100, max: 200)
+
+            TableColumn("") { item in
+                if !item.attachments.isEmpty {
+                    Image(systemName: "paperclip")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .width(24)
         }
         .tableStyle(.inset)
         .alternatingRowBackgrounds(.disabled)

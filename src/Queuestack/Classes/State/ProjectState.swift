@@ -151,6 +151,18 @@ final class ProjectState {
         return updated
     }
 
+    // MARK: - Attachments
+
+    func addAttachment(_ attachment: String, to item: Item) async throws {
+        try await self.service.addAttachment(attachment, to: item, in: self.project)
+        await self.refresh()
+    }
+
+    func removeAttachment(at index: Int, from item: Item) async throws {
+        try await self.service.removeAttachment(at: index, from: item, in: self.project)
+        await self.refresh()
+    }
+
     // MARK: - Search
 
     func search(query: String, fullText: Bool = false, closed: Bool = false) async throws -> [Item] {

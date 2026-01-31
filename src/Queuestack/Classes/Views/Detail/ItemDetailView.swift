@@ -33,10 +33,23 @@ struct ItemDetailView: View {
 
             Divider()
 
-            // Scrollable body
-            ScrollView {
+            // Resizable split between body and attachments
+            VSplitView {
+                // Body section (TextEditor is already scrollable)
                 ItemBody(item: item)
                     .padding()
+
+                // Attachments section
+                VStack(spacing: 0) {
+                    Divider()
+
+                    ScrollView {
+                        AttachmentSection(item: item)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .frame(minHeight: 80)
             }
         }
         .sheet(isPresented: self.$showingEditSheet) {

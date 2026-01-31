@@ -26,6 +26,7 @@ struct FileReader {
             createdAt: parsed.createdAt,
             status: parsed.status,
             labels: parsed.labels,
+            attachments: parsed.attachments,
             category: category,
             body: parsed.body,
             filePath: path

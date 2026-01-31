@@ -47,12 +47,13 @@ struct ItemBody: View {
                 .padding(8)
                 .background(.quaternary.opacity(0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-                .frame(minHeight: 200)
+                .frame(maxHeight: .infinity)
                 .focused(self.$isFocused)
                 .onChange(of: self.bodyText) { _, newValue in
                     self.scheduleAutoSave(newValue)
                 }
         }
+        .frame(maxHeight: .infinity)
         .onAppear {
             self.bodyText = self.item.body
         }

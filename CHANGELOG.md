@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Attachment support in item detail view with URL and file attachment management
+
 ### Changed
 - Replace colored label badges with plain comma-separated text in item list
 - Use SwiftUI Table for item list (native resizable columns, headers, selection)

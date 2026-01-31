@@ -293,6 +293,28 @@ final class Service {
         }
     }
 
+    // MARK: - Attachments
+
+    /// Add an attachment to an item
+    func addAttachment(_ attachment: String, to item: Item, in project: Project) async throws {
+        let args = ["attachments", "add", "--id", item.id, attachment]
+        let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
+
+        if let error = result.error {
+            throw error
+        }
+    }
+
+    /// Remove an attachment from an item by index (1-based)
+    func removeAttachment(at index: Int, from item: Item, in project: Project) async throws {
+        let args = ["attachments", "remove", "--id", item.id, String(index)]
+        let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
+
+        if let error = result.error {
+            throw error
+        }
+    }
+
     // MARK: - Bulk Operations
 
     /// Load all items (open, closed, templates) for a project

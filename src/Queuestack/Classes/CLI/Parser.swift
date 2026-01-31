@@ -24,6 +24,7 @@ struct Parser {
         let createdAt: Date
         let status: Item.Status
         let labels: [String]
+        let attachments: [String]
         let body: String
     }
 
@@ -55,6 +56,7 @@ struct Parser {
         let statusString = frontmatter["status"] as? String ?? "open"
         let status = Item.Status(rawValue: statusString) ?? .open
         let labels = frontmatter["labels"] as? [String] ?? []
+        let attachments = frontmatter["attachments"] as? [String] ?? []
 
         var createdAt = Date()
         if let dateString = frontmatter["created_at"] as? String {
@@ -68,6 +70,7 @@ struct Parser {
             createdAt: createdAt,
             status: status,
             labels: labels,
+            attachments: attachments,
             body: bodyContent
         )
     }
@@ -103,7 +106,8 @@ struct Parser {
 
             // Array item (- value)
             if trimmed.hasPrefix("- ") {
-                let value = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                let valueRaw = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                let value = valueRaw.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
                 arrayValues.append(value)
                 inArray = true
                 continue

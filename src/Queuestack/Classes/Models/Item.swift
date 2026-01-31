@@ -15,6 +15,7 @@ struct Item: Identifiable, Hashable {
     var createdAt: Date
     var status: Status
     var labels: [String]
+    var attachments: [String]
     var category: String?
     var body: String
     let filePath: URL
@@ -38,6 +39,7 @@ extension Item {
             createdAt: Date(),
             status: .open,
             labels: [],
+            attachments: [],
             category: nil,
             body: "",
             filePath: URL(filePath: "/tmp/placeholder.md")
