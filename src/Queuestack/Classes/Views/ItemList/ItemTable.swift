@@ -6,10 +6,14 @@
 //  Copyright © 2026 Dominic Rodemer. All rights reserved.
 //
 
+import DZFoundation
 import SwiftUI
 
 struct ItemTable: View {
     @Environment(AppState.self) private var appState
+
+    @State private var itemToEdit: Item?
+    @State private var itemToDelete: Item?
 
     var body: some View {
         @Bindable var appState = self.appState
@@ -43,10 +47,66 @@ struct ItemTable: View {
                 self.itemContextMenu(item)
             }
         }
+        .sheet(item: self.$itemToEdit) { item in
+            EditItemSheet(item: item)
+        }
+        .confirmationDialog(
+            String(localized: "Delete Item", comment: "Delete confirmation title"),
+            isPresented: Binding(
+                get: { self.itemToDelete != nil },
+                set: { if !$0 { self.itemToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "Delete", comment: "Delete button"), role: .destructive) {
+                if let item = self.itemToDelete {
+                    self.deleteItem(item)
+                }
+            }
+            Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
+                self.itemToDelete = nil
+            }
+        } message: {
+            Text(String(
+                localized: "Are you sure you want to delete this item? This action cannot be undone.",
+                comment: "Delete confirmation message"
+            ))
+        }
+    }
+
+    private func deleteItem(_ item: Item) {
+        Task {
+            do {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+                process.arguments = ["trash", item.filePath.path]
+                try process.run()
+                process.waitUntilExit()
+
+                // Reload items after deletion
+                await self.appState.currentProjectState?.loadItems()
+                self.appState.selectedItemID = nil
+            } catch {
+                DZFoundation.DZErrorLog(error)
+            }
+        }
     }
 
     @ViewBuilder
     private func itemContextMenu(_ item: Item) -> some View {
+        // Edit (only for open items or templates)
+        if item.status == .open || item.isTemplate {
+            Button {
+                self.itemToEdit = item
+            } label: {
+                SwiftUI.Label(
+                    String(localized: "Edit...", comment: "Context menu edit item"),
+                    systemImage: "pencil"
+                )
+            }
+        }
+
+        // Close/Reopen
         if item.status == .open {
             Button {
                 Task {
@@ -82,6 +142,18 @@ struct ItemTable: View {
             SwiftUI.Label(
                 String(localized: "Show in Finder", comment: "Context menu show in Finder"),
                 systemImage: "folder"
+            )
+        }
+
+        Divider()
+
+        // Delete
+        Button(role: .destructive) {
+            self.itemToDelete = item
+        } label: {
+            SwiftUI.Label(
+                String(localized: "Delete...", comment: "Context menu delete item"),
+                systemImage: "trash"
             )
         }
     }
