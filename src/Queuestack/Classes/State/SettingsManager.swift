@@ -118,6 +118,59 @@ final class SettingsManager {
         self.sidebarTree.setExpanded(expanded, forGroupWithID: groupID)
     }
 
+    /// Move a node to a new location (handles circular group prevention)
+    /// Returns true if the move was successful
+    @discardableResult
+    func moveNode(id: UUID, toGroupWithID targetGroupID: UUID?, at index: Int) -> Bool {
+        // Prevent circular drops: can't drop a group into itself or its descendants
+        if let targetGroupID, self.sidebarTree.isAncestor(id, of: targetGroupID) {
+            return false
+        }
+        if id == targetGroupID {
+            return false
+        }
+
+        // Check if it's a no-op (same position)
+        let currentParentID = self.sidebarTree.findParentID(of: id)
+        if currentParentID == targetGroupID {
+            // Same parent - check if same index
+            let nodes: [SidebarNode]
+            if
+                let parentID = currentParentID,
+                let parent = self.sidebarTree.findNode(id: parentID),
+                case let .group(group) = parent
+            {
+                nodes = group.children
+            } else if currentParentID == nil {
+                nodes = self.sidebarTree
+            } else {
+                return false
+            }
+
+            if let currentIndex = nodes.indexOfNode(id: id) {
+                // Account for removal shifting indices
+                let effectiveIndex = index > currentIndex ? index - 1 : index
+                if currentIndex == effectiveIndex {
+                    return false // No-op
+                }
+            }
+        }
+
+        // Remove from current location
+        guard let node = self.sidebarTree.removeNode(id: id) else {
+            return false
+        }
+
+        // Insert at new location
+        self.sidebarTree.insertNode(node, inGroupWithID: targetGroupID, at: index)
+        return true
+    }
+
+    /// Check if a project with the given path already exists in the tree
+    func containsProject(at path: URL) -> Bool {
+        self.sidebarTree.containsProject(at: path)
+    }
+
     private func updateNode(id: UUID, transform: (SidebarNode) -> SidebarNode) {
         self.sidebarTree = self.updateNodeRecursive(in: self.sidebarTree, id: id, transform: transform)
     }

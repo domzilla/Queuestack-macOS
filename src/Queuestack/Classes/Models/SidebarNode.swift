@@ -142,4 +142,89 @@ extension [SidebarNode] {
             }
         }
     }
+
+    /// Find the parent group ID of a node (nil if at root)
+    func findParentID(of nodeID: UUID) -> UUID? {
+        for node in self {
+            if node.id == nodeID {
+                return nil // Found at this level, no parent in this scope
+            }
+            if case let .group(group) = node {
+                // Check if the target is a direct child
+                if group.children.contains(where: { $0.id == nodeID }) {
+                    return group.id
+                }
+                // Recursively search in children
+                if let parentID = group.children.findParentID(of: nodeID) {
+                    return parentID
+                }
+            }
+        }
+        return nil
+    }
+
+    /// Check if nodeID is an ancestor of potentialDescendantID
+    func isAncestor(_ nodeID: UUID, of potentialDescendantID: UUID) -> Bool {
+        guard let node = self.findNode(id: nodeID), case let .group(group) = node else {
+            return false
+        }
+        return group.children.containsNode(id: potentialDescendantID)
+    }
+
+    /// Check if tree contains a node with the given ID (recursive)
+    func containsNode(id: UUID) -> Bool {
+        for node in self {
+            if node.id == id { return true }
+            if case let .group(group) = node {
+                if group.children.containsNode(id: id) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    /// Insert a node at a specific index within a group (or root if groupID is nil)
+    mutating func insertNode(_ node: SidebarNode, inGroupWithID groupID: UUID?, at index: Int) {
+        guard let groupID else {
+            let safeIndex = Swift.min(Swift.max(index, 0), self.count)
+            self.insert(node, at: safeIndex)
+            return
+        }
+
+        for i in self.indices {
+            if case var .group(group) = self[i], group.id == groupID {
+                let safeIndex = Swift.min(Swift.max(index, 0), group.children.count)
+                group.children.insert(node, at: safeIndex)
+                self[i] = .group(group)
+                return
+            }
+            if case var .group(group) = self[i] {
+                group.children.insertNode(node, inGroupWithID: groupID, at: index)
+                self[i] = .group(group)
+            }
+        }
+    }
+
+    /// Find the index of a node within its parent (or root)
+    func indexOfNode(id: UUID) -> Int? {
+        self.firstIndex(where: { $0.id == id })
+    }
+
+    /// Check if a project with the given path already exists
+    func containsProject(at path: URL) -> Bool {
+        for node in self {
+            switch node {
+            case let .project(project):
+                if project.path == path {
+                    return true
+                }
+            case let .group(group):
+                if group.children.containsProject(at: path) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
 }

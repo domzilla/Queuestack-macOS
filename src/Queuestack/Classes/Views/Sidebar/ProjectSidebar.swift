@@ -8,51 +8,34 @@
 
 import DZFoundation
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct ProjectSidebar: View {
     @Environment(WindowState.self) private var windowState
 
-    @State private var showingAddMenu = false
     @State private var showingAddProjectSheet = false
     @State private var showingAddGroupSheet = false
     @State private var targetGroupID: UUID?
-    @State private var isDropTargeted = false
     @State private var showingUnsavedAlert = false
     @State private var pendingProjectID: UUID?
 
     var body: some View {
         @Bindable var windowState = self.windowState
 
-        List(selection: $windowState.selectedProjectID) {
-            SidebarTreeView(
-                nodes: self.windowState.services.settings.sidebarTree,
-                onAddProject: { groupID in
-                    self.targetGroupID = groupID
-                    self.showingAddProjectSheet = true
-                },
-                onAddGroup: { groupID in
-                    self.targetGroupID = groupID
-                    self.showingAddGroupSheet = true
-                }
-            )
-        }
-        .listStyle(.sidebar)
+        SidebarOutlineView(
+            settings: self.windowState.services.settings,
+            selectedProjectID: $windowState.selectedProjectID,
+            onAddProject: { groupID in
+                self.targetGroupID = groupID
+                self.showingAddProjectSheet = true
+            },
+            onAddGroup: { groupID in
+                self.targetGroupID = groupID
+                self.showingAddGroupSheet = true
+            }
+        )
         .navigationTitle(String(localized: "Projects", comment: "Sidebar title"))
         .safeAreaInset(edge: .bottom) {
             self.bottomBar
-        }
-        .dropDestination(for: URL.self) { urls, _ in
-            self.handleDroppedURLs(urls)
-        } isTargeted: { targeted in
-            self.isDropTargeted = targeted
-        }
-        .overlay {
-            if self.isDropTargeted {
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.accentColor, lineWidth: 2)
-                    .padding(4)
-            }
         }
         .sheet(isPresented: self.$showingAddProjectSheet) {
             AddProjectSheet(targetGroupID: self.targetGroupID)
@@ -85,30 +68,6 @@ struct ProjectSidebar: View {
                 comment: "Unsaved changes alert message"
             ))
         }
-    }
-
-    private func handleDroppedURLs(_ urls: [URL]) -> Bool {
-        var addedAny = false
-
-        for url in urls {
-            // Check if it's a directory
-            var isDirectory: ObjCBool = false
-            guard
-                FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
-                isDirectory.boolValue else { continue }
-
-            // Try to create a project from the URL
-            do {
-                let project = try Project.from(url: url)
-                self.windowState.services.settings.addProject(project)
-                addedAny = true
-            } catch {
-                // Not a valid queuestack project, skip
-                continue
-            }
-        }
-
-        return addedAny
     }
 
     private func handleProjectSelectionChange(from oldID: UUID?, to newID: UUID?) {

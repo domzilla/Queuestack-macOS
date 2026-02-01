@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Attachment support in item detail view with URL and file attachment management
 
 ### Changed
+- Project sidebar now uses NSOutlineView for native drag & drop support (reorder, move between groups, drop folders from Finder)
 - Attachment list now supports Finder-like multi-selection (Cmd+Click toggle, Shift+Click range)
 - Single click selects attachment, double-click opens it, click empty space deselects
 - Context menu on attachments: Show in Finder, Copy File Path/URL, Delete
