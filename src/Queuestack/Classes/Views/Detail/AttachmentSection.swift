@@ -197,21 +197,17 @@ struct AttachmentSection: View {
     }
 
     private func revealInFinder(_ attachment: String) {
-        let itemDirectory = self.item.filePath.deletingLastPathComponent()
-        let fileURL = itemDirectory.appendingPathComponent(attachment)
+        let fileURL = self.attachmentURL(for: attachment)
         if FileManager.default.fileExists(atPath: fileURL.path) {
             NSWorkspace.shared.activateFileViewerSelecting([fileURL])
         }
     }
 
     private func copyPath(_ attachment: String) {
-        let textToCopy: String
-        if self.isURL(attachment) {
-            textToCopy = attachment
+        let textToCopy: String = if self.isURL(attachment) {
+            attachment
         } else {
-            let itemDirectory = self.item.filePath.deletingLastPathComponent()
-            let fileURL = itemDirectory.appendingPathComponent(attachment)
-            textToCopy = fileURL.path
+            self.attachmentURL(for: attachment).path
         }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(textToCopy, forType: .string)
@@ -241,6 +237,20 @@ struct AttachmentSection: View {
         attachment.hasPrefix("http://") || attachment.hasPrefix("https://")
     }
 
+    /// Returns the URL of the attachments directory for the current item.
+    /// Format: `{item-stem}.attachments/` as sibling to the item file.
+    private var attachmentsDirectoryURL: URL {
+        let itemURL = self.item.filePath
+        let stem = itemURL.deletingPathExtension().lastPathComponent
+        return itemURL.deletingLastPathComponent()
+            .appendingPathComponent("\(stem).attachments", isDirectory: true)
+    }
+
+    /// Resolves an attachment filename to its full file URL.
+    private func attachmentURL(for attachment: String) -> URL {
+        self.attachmentsDirectoryURL.appendingPathComponent(attachment)
+    }
+
     private func displayName(for attachment: String) -> String {
         if self.isURL(attachment) {
             return attachment
@@ -255,9 +265,7 @@ struct AttachmentSection: View {
                 NSWorkspace.shared.open(url)
             }
         } else {
-            // File attachment - resolve relative to item's directory
-            let itemDirectory = self.item.filePath.deletingLastPathComponent()
-            let fileURL = itemDirectory.appendingPathComponent(attachment)
+            let fileURL = self.attachmentURL(for: attachment)
             if FileManager.default.fileExists(atPath: fileURL.path) {
                 NSWorkspace.shared.open(fileURL)
             } else {
