@@ -26,9 +26,52 @@ final class ProjectState {
 
     private let service: Service
 
+    /// Per-item serial queues for refresh operations.
+    /// Ensures same item isn't refreshed concurrently, but different items can refresh in parallel.
+    private var itemRefreshQueues: [String: AsyncStream<Void>.Continuation] = [:]
+
+    /// Tracks last processed modification date per path to skip stale refreshes.
+    private var lastProcessedModificationDates: [String: Date] = [:]
+
     init(project: Project, service: Service) {
         self.project = project
         self.service = service
+    }
+
+    /// Records modification dates for loaded items to enable stale refresh detection.
+    private func recordModificationDates(for items: [Item]) {
+        for item in items {
+            let path = item.filePath.path
+            if
+                let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+                let modDate = attrs[.modificationDate] as? Date
+            {
+                self.lastProcessedModificationDates[path] = modDate
+            }
+        }
+    }
+
+    /// Gets or creates a serial refresh queue for a specific item path.
+    private func refreshQueue(for path: String) -> AsyncStream<Void>.Continuation {
+        if let existing = self.itemRefreshQueues[path] {
+            return existing
+        }
+
+        let stream = AsyncStream<Void> { continuation in
+            self.itemRefreshQueues[path] = continuation
+        }
+
+        // Start consumer task for this item
+        Task { [weak self] in
+            for await _ in stream {
+                guard let self else { break }
+                await self.processRefresh(path: path)
+            }
+            // Clean up when stream ends
+            self?.itemRefreshQueues.removeValue(forKey: path)
+        }
+
+        return self.itemRefreshQueues[path]!
     }
 
     // MARK: - All Items
@@ -55,6 +98,9 @@ final class ProjectState {
             self.closedItems = closed
             self.templateItems = templates
 
+            // Record modification dates to skip stale FSEvents refreshes
+            self.recordModificationDates(for: open + closed + templates)
+
             // Compute labels and categories from loaded items
             self.computeLabelsAndCategories()
         } catch {
@@ -71,28 +117,49 @@ final class ProjectState {
         await self.loadItems()
     }
 
-    /// Refresh only specific items that changed (incremental update)
-    func refreshItems(at paths: [String]) async {
-        DZLog("refreshItems(at:) for \(paths.count) path(s)")
+    /// Refresh only specific items that changed (incremental update).
+    /// Each item has its own serial queue - different items refresh in parallel, same item serialized.
+    func refreshItems(at paths: [String]) {
+        for path in paths {
+            DZLog("refreshItems(at:) queuing: \(path)")
+            self.refreshQueue(for: path).yield()
+        }
+    }
 
-        for pathString in paths {
-            let fileURL = URL(filePath: pathString)
+    /// Processes a refresh for a single item (called serially per-item from queue consumer).
+    private func processRefresh(path: String) async {
+        let fileURL = URL(filePath: path)
 
-            // Check if file still exists
-            if FileManager.default.fileExists(atPath: pathString) {
-                // File exists - read and update/add
-                do {
-                    let updatedItem = try self.service.readItem(at: fileURL, in: self.project)
-                    self.updateOrAddItem(updatedItem)
-                    DZLog("Updated item: \(updatedItem.id)")
-                } catch {
-                    DZLog("Failed to read item at \(pathString): \(error)")
+        // Check if file still exists
+        if FileManager.default.fileExists(atPath: path) {
+            // Check modification date to skip stale refreshes
+            if
+                let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+                let modDate = attrs[.modificationDate] as? Date
+            {
+                if
+                    let lastProcessed = self.lastProcessedModificationDates[path],
+                    modDate <= lastProcessed
+                {
+                    DZLog("processRefresh() skipping stale: \(path)")
+                    return
                 }
-            } else {
-                // File was deleted - remove from arrays
-                self.removeItem(at: fileURL)
-                DZLog("Removed item at: \(pathString)")
+                self.lastProcessedModificationDates[path] = modDate
             }
+
+            // File exists - read and update/add
+            do {
+                let updatedItem = try self.service.readItem(at: fileURL, in: self.project)
+                self.updateOrAddItem(updatedItem)
+                DZLog("processRefresh() updated: \(updatedItem.id)")
+            } catch {
+                DZLog("processRefresh() failed: \(path) - \(error)")
+            }
+        } else {
+            // File was deleted - remove from arrays and tracking
+            self.removeItem(at: fileURL)
+            self.lastProcessedModificationDates.removeValue(forKey: path)
+            DZLog("processRefresh() removed: \(path)")
         }
 
         // Recompute labels and categories
@@ -188,27 +255,27 @@ final class ProjectState {
 
     func closeItem(_ item: Item) async throws {
         try await self.service.close(item: item, in: self.project)
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func reopenItem(_ item: Item) async throws {
         try await self.service.reopen(item: item, in: self.project)
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func addLabels(_ labels: [String], to item: Item) async throws {
         try await self.service.addLabels(labels, to: item, in: self.project)
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func removeLabels(_ labels: [String], from item: Item) async throws {
         try await self.service.removeLabels(labels, from: item, in: self.project)
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func updateCategory(of item: Item, to category: String?) async throws {
         try await self.service.updateCategory(of: item, to: category, in: self.project)
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func updateTitle(of item: Item, to newTitle: String) async throws -> Item {
@@ -221,19 +288,19 @@ final class ProjectState {
 
     func addAttachment(_ attachment: String, to item: Item) async throws {
         try await self.service.addAttachment(attachment, to: item, in: self.project)
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func addAttachments(_ attachments: [String], to item: Item) async throws {
         for attachment in attachments {
             try await self.service.addAttachment(attachment, to: item, in: self.project)
         }
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func removeAttachment(at index: Int, from item: Item) async throws {
         try await self.service.removeAttachment(at: index, from: item, in: self.project)
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     func removeAttachments(at indices: [Int], from item: Item) async throws {
@@ -241,7 +308,7 @@ final class ProjectState {
         for index in indices.sorted(by: >) {
             try await self.service.removeAttachment(at: index, from: item, in: self.project)
         }
-        await self.refreshItems(at: [item.filePath.path])
+        self.refreshItems(at: [item.filePath.path])
     }
 
     // MARK: - Search

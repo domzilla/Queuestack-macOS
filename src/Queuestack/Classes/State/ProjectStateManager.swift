@@ -57,7 +57,7 @@ final class ProjectStateManager {
             Task { @MainActor in
                 DZLog("File change detected for \(changedPaths.count) file(s)")
                 if let state = self.states[project.id] {
-                    await state.refreshItems(at: changedPaths)
+                    state.refreshItems(at: changedPaths)
                 }
             }
         }
