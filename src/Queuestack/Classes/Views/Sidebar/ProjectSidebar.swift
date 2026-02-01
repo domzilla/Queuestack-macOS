@@ -179,7 +179,6 @@ struct ProjectSidebar: View {
             .padding(8)
             Spacer()
         }
-        .background(.bar)
     }
 }
 
