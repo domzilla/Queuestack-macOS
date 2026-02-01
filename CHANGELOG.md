@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File picker now supports multiple selection
 - Drag and drop files onto attachments section to add them
 - Single-item mutations use incremental refresh instead of full list reload
+- Per-item serial refresh queues using AsyncStream prevent race conditions between FSEvents and manual refreshes
+- Stale refresh detection skips redundant refreshes when file modification date unchanged
+- Updated attachment path resolution for qs 0.5.0 (attachments now in `{item-stem}.attachments/` directory)
+- Item deletion now also trashes the attachments directory if it exists
 - Selection uses native macOS selection colors
 - Removed inline trash button, document icon, and focus ring from attachment rows
 - Split state architecture: AppServices (shared) and WindowState (per-window) for multi-window support
