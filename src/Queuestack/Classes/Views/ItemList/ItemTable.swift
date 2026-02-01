@@ -85,11 +85,24 @@ struct ItemTable: View {
     private func deleteItem(_ item: Item) {
         Task {
             do {
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-                process.arguments = ["trash", item.filePath.path]
-                try process.run()
-                process.waitUntilExit()
+                // Trash the item file
+                let trashProcess = Process()
+                trashProcess.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+                trashProcess.arguments = ["trash", item.filePath.path]
+                try trashProcess.run()
+                trashProcess.waitUntilExit()
+
+                // Also trash the attachments directory if it exists
+                let stem = item.filePath.deletingPathExtension().lastPathComponent
+                let attachmentsDir = item.filePath.deletingLastPathComponent()
+                    .appendingPathComponent("\(stem).attachments")
+                if FileManager.default.fileExists(atPath: attachmentsDir.path) {
+                    let attachmentsProcess = Process()
+                    attachmentsProcess.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+                    attachmentsProcess.arguments = ["trash", attachmentsDir.path]
+                    try attachmentsProcess.run()
+                    attachmentsProcess.waitUntilExit()
+                }
 
                 // Reload items after deletion
                 await self.windowState.currentProjectState?.loadItems()
