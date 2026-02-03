@@ -13,11 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Global search scope filter (Open/Closed/Template) with segmented control below search field
 
 ### Fixed
+- Quick Look panel now resizes properly when navigating between attachments of different sizes
 - Global search now triggers on typing with 300ms debounce instead of requiring Enter key
 - Search results persist in sidebar while query text exists (clearing field returns to project outline)
 - Selecting search results within the same project now works correctly
 
 ### Changed
+- Quick Look preview now shows single item at a time (Finder-like behavior) instead of multi-item panel with navigation arrows
 - Attachment list refactored to NSTableView for native keyboard navigation and Quick Look integration
 - Item list header reordered: search field on top, filter segmented control below
 - Global search now uses native `.searchable` modifier with sidebar placement; results display inline in sidebar

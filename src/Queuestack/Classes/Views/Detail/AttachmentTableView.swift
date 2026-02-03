@@ -150,6 +150,7 @@ extension AttachmentTableView {
         weak var tableView: AttachmentNSTableView?
 
         private var clickedRow: Int = -1
+        private var currentPreviewURL: URL?
 
         init(
             attachments: [String],
@@ -192,14 +193,6 @@ extension AttachmentTableView {
             return FileManager.default.fileExists(atPath: url.path)
         }
 
-        /// Returns file URLs for previewable attachments (files only, not web URLs).
-        private var previewableURLs: [URL] {
-            self.attachments.compactMap { attachment in
-                guard self.canQuickLook(attachment) else { return nil }
-                return self.attachmentURL(for: attachment)
-            }
-        }
-
         // MARK: - Actions
 
         /// Toggles Quick Look panel for the given row, or the selected row if nil.
@@ -230,11 +223,8 @@ extension AttachmentTableView {
             panel.dataSource = self
             panel.delegate = self
 
-            // Calculate the preview index
-            let url = self.attachmentURL(for: attachment)
-            if let previewIndex = self.previewableURLs.firstIndex(of: url) {
-                panel.currentPreviewItemIndex = previewIndex
-            }
+            // Set the single preview item (Finder-like behavior)
+            self.currentPreviewURL = self.attachmentURL(for: attachment)
 
             // Reload and show
             panel.reloadData()
@@ -293,10 +283,9 @@ extension AttachmentTableView {
 
                 let attachment = self.attachments[tableView.selectedRow]
                 if self.canQuickLook(attachment) {
-                    let url = self.attachmentURL(for: attachment)
-                    if let index = self.previewableURLs.firstIndex(of: url) {
-                        QLPreviewPanel.shared()!.currentPreviewItemIndex = index
-                    }
+                    // Update the single preview item and reload (Finder-like behavior)
+                    self.currentPreviewURL = self.attachmentURL(for: attachment)
+                    QLPreviewPanel.shared()!.reloadData()
                 }
             }
         }
@@ -441,12 +430,14 @@ extension AttachmentTableView {
         // MARK: - QLPreviewPanelDataSource
 
         func numberOfPreviewItems(in _: QLPreviewPanel!) -> Int {
-            self.previewableURLs.count
+            // Return single item like Finder does - this removes navigation arrows
+            // and triggers proper resize when selection changes
+            self.currentPreviewURL != nil ? 1 : 0
         }
 
         func previewPanel(_: QLPreviewPanel!, previewItemAt index: Int) -> (any QLPreviewItem)! {
-            guard index >= 0, index < self.previewableURLs.count else { return nil }
-            return self.previewableURLs[index] as NSURL
+            guard index == 0, let url = self.currentPreviewURL else { return nil }
+            return url as NSURL
         }
 
         // MARK: - QLPreviewPanelDelegate
