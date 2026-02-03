@@ -15,14 +15,7 @@ struct ItemListHeader: View {
         @Bindable var windowState = self.windowState
 
         VStack(alignment: .leading, spacing: 8) {
-            // Row 1: Filter picker (left) + Category picker (right)
-            HStack {
-                self.filterPicker
-                Spacer()
-                self.categoryPicker
-            }
-
-            // Row 2: Local search field
+            // Row 1: Local search field
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
@@ -45,6 +38,13 @@ struct ItemListHeader: View {
             .padding(6)
             .background(.quaternary)
             .clipShape(RoundedRectangle(cornerRadius: 6))
+
+            // Row 2: Filter picker (left) + Category picker (right)
+            HStack {
+                self.filterPicker
+                Spacer()
+                self.categoryPicker
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
