@@ -25,6 +25,25 @@ struct GlobalSearchResultsList: View {
             }
         }
         .listStyle(.sidebar)
+        .safeAreaInset(edge: .top) {
+            self.scopePicker
+        }
+    }
+
+    // MARK: - Scope Picker
+
+    private var scopePicker: some View {
+        Picker(selection: Bindable(self.windowState).globalSearchScope) {
+            ForEach(WindowState.GlobalSearchScope.allCases) { scope in
+                Text(scope.localizedName).tag(scope)
+            }
+        } label: {
+            EmptyView()
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Loading State
@@ -70,15 +89,9 @@ struct GlobalSearchResultsList: View {
         Button {
             self.selectItem(item, in: project)
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: item.status == .open ? "circle" : "checkmark.circle.fill")
-                    .foregroundStyle(item.status == .open ? Color.secondary : Color.green)
-                    .font(.caption)
-
-                Text(item.title)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
+            Text(item.title)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
         .buttonStyle(.plain)
     }

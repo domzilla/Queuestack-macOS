@@ -46,7 +46,27 @@ final class WindowState {
 
     // MARK: - Global Search
 
+    enum GlobalSearchScope: String, CaseIterable, Identifiable {
+        case open
+        case closed
+        case template
+
+        var id: String { self.rawValue }
+
+        var localizedName: String {
+            switch self {
+            case .open:
+                String(localized: "Open", comment: "Global search scope: open items")
+            case .closed:
+                String(localized: "Closed", comment: "Global search scope: closed items")
+            case .template:
+                String(localized: "Template", comment: "Global search scope: templates")
+            }
+        }
+    }
+
     var globalSearchQuery = ""
+    var globalSearchScope: GlobalSearchScope = .open
     var globalSearchResults: [GlobalSearchResult] = []
     var isGlobalSearching = false
 
@@ -199,7 +219,7 @@ final class WindowState {
 
     func performGlobalSearch() async {
         let query = self.globalSearchQuery.trimmingCharacters(in: .whitespaces)
-        DZLog("performGlobalSearch called with query: '\(query)'")
+        DZLog("performGlobalSearch called with query: '\(query)' scope: \(self.globalSearchScope)")
         guard !query.isEmpty else {
             self.globalSearchResults = []
             return
@@ -210,7 +230,28 @@ final class WindowState {
 
         for project in self.allProjects {
             do {
-                let items = try await self.services.service.search(query: query, in: project, fullText: true)
+                let items: [Item]
+                switch self.globalSearchScope {
+                case .open:
+                    items = try await self.services.service.search(
+                        query: query,
+                        in: project,
+                        fullText: true
+                    )
+                case .closed:
+                    items = try await self.services.service.search(
+                        query: query,
+                        in: project,
+                        fullText: true,
+                        closed: true
+                    )
+                case .template:
+                    // CLI doesn't support template search, filter client-side
+                    let allTemplates = try await self.services.service.listTemplates(in: project)
+                    let lowercasedQuery = query.lowercased()
+                    items = allTemplates.filter { $0.title.lowercased().contains(lowercasedQuery) }
+                }
+
                 DZLog("Search in \(project.name): found \(items.count) items")
                 if !items.isEmpty {
                     results.append(GlobalSearchResult(project: project, items: items))

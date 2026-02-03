@@ -37,6 +37,11 @@ private struct WindowContent: View {
     @State private var showingNewTemplateSheet = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
+    /// Combined ID for search task - triggers re-search when query or scope changes
+    private var searchTaskID: String {
+        "\(self.windowState.globalSearchQuery)|\(self.windowState.globalSearchScope.rawValue)"
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: self.$columnVisibility) {
             ProjectSidebar()
@@ -52,7 +57,7 @@ private struct WindowContent: View {
             placement: .sidebar,
             prompt: String(localized: "Search all projects...", comment: "Global search placeholder")
         )
-        .task(id: self.windowState.globalSearchQuery) {
+        .task(id: self.searchTaskID) {
             // Debounce: wait 300ms before searching
             do {
                 try await Task.sleep(for: .milliseconds(300))
