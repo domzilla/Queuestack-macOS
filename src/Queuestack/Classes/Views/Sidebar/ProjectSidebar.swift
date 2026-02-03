@@ -11,7 +11,6 @@ import SwiftUI
 
 struct ProjectSidebar: View {
     @Environment(WindowState.self) private var windowState
-    @Environment(\.isSearching) private var isSearching
 
     @State private var showingAddProjectSheet = false
     @State private var showingAddGroupSheet = false
@@ -20,13 +19,7 @@ struct ProjectSidebar: View {
     @State private var pendingProjectID: UUID?
 
     private var showSearchResults: Bool {
-        let result = self.isSearching && (
-            self.windowState.isGlobalSearching || !self.windowState.globalSearchResults.isEmpty
-        )
-        DZLog(
-            "showSearchResults: \(result) (isSearching=\(self.isSearching), isGlobalSearching=\(self.windowState.isGlobalSearching), resultsCount=\(self.windowState.globalSearchResults.count))"
-        )
-        return result
+        !self.windowState.globalSearchQuery.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var body: some View {

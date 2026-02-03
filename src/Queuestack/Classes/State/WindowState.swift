@@ -231,9 +231,14 @@ final class WindowState {
     }
 
     func navigateToSearchResult(_ item: Item, in project: Project) {
-        self.pendingItemID = item.id
-        self.selectedProjectID = project.id
-        self.clearGlobalSearch()
+        if self.selectedProjectID == project.id {
+            // Same project: directly select the item
+            self.selectedItemID = item.id
+        } else {
+            // Different project: use pending mechanism (onChange will consume it)
+            self.pendingItemID = item.id
+            self.selectedProjectID = project.id
+        }
     }
 
     // MARK: - Item Operations

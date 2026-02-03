@@ -11,7 +11,6 @@ import SwiftUI
 /// Displays global search results grouped by project in the sidebar
 struct GlobalSearchResultsList: View {
     @Environment(WindowState.self) private var windowState
-    @Environment(\.dismissSearch) private var dismissSearch
 
     var body: some View {
         List {
@@ -88,7 +87,6 @@ struct GlobalSearchResultsList: View {
 
     private func selectItem(_ item: Item, in project: Project) {
         self.windowState.navigateToSearchResult(item, in: project)
-        self.dismissSearch()
     }
 }
 
