@@ -10,7 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Attachment support in item detail view with URL and file attachment management
 
+### Fixed
+- Global search now triggers on typing with 300ms debounce instead of requiring Enter key
+- Search results persist in sidebar while query text exists (clearing field returns to project outline)
+- Selecting search results within the same project now works correctly
+
 ### Changed
+- Global search now uses native `.searchable` modifier with sidebar placement; results display inline in sidebar
 - Project sidebar now uses NSOutlineView for native drag & drop support (reorder, move between groups, drop folders from Finder)
 - Attachment list now supports Finder-like multi-selection (Cmd+Click toggle, Shift+Click range)
 - Single click selects attachment, double-click opens it, click empty space deselects
