@@ -393,7 +393,7 @@ extension SidebarOutlineView {
             let row = outlineView.row(forItem: node)
             guard
                 row >= 0,
-                let cellView = outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) as? NSTableCellView else { return }
+                outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) is NSTableCellView else { return }
 
             // Show rename alert
             let alert = NSAlert()
