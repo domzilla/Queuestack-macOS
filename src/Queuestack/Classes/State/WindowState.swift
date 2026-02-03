@@ -50,6 +50,9 @@ final class WindowState {
     var globalSearchResults: [GlobalSearchResult] = []
     var isGlobalSearching = false
 
+    /// Item to select after project change (for navigation from global search)
+    private var pendingItemID: String?
+
     struct GlobalSearchResult: Identifiable {
         let id = UUID()
         let project: Project
@@ -166,8 +169,13 @@ final class WindowState {
     private func onProjectSelectionChanged() {
         DZLog("onProjectSelectionChanged: selectedProjectID=\(String(describing: self.selectedProjectID))")
 
-        // Clear item selection when project changes
-        self.selectedItemID = nil
+        // Use pending item from global search navigation, or clear selection
+        if let pending = self.pendingItemID {
+            self.selectedItemID = pending
+            self.pendingItemID = nil
+        } else {
+            self.selectedItemID = nil
+        }
 
         // Start watching new project
         if let project = self.selectedProject {
@@ -191,6 +199,7 @@ final class WindowState {
 
     func performGlobalSearch() async {
         let query = self.globalSearchQuery.trimmingCharacters(in: .whitespaces)
+        DZLog("performGlobalSearch called with query: '\(query)'")
         guard !query.isEmpty else {
             self.globalSearchResults = []
             return
@@ -202,6 +211,7 @@ final class WindowState {
         for project in self.allProjects {
             do {
                 let items = try await self.services.service.search(query: query, in: project, fullText: true)
+                DZLog("Search in \(project.name): found \(items.count) items")
                 if !items.isEmpty {
                     results.append(GlobalSearchResult(project: project, items: items))
                 }
@@ -210,6 +220,7 @@ final class WindowState {
             }
         }
 
+        DZLog("Global search complete: \(results.count) projects with results")
         self.globalSearchResults = results
         self.isGlobalSearching = false
     }
@@ -217,6 +228,12 @@ final class WindowState {
     func clearGlobalSearch() {
         self.globalSearchQuery = ""
         self.globalSearchResults = []
+    }
+
+    func navigateToSearchResult(_ item: Item, in project: Project) {
+        self.pendingItemID = item.id
+        self.selectedProjectID = project.id
+        self.clearGlobalSearch()
     }
 
     // MARK: - Item Operations

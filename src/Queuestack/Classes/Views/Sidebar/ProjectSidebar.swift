@@ -11,6 +11,7 @@ import SwiftUI
 
 struct ProjectSidebar: View {
     @Environment(WindowState.self) private var windowState
+    @Environment(\.isSearching) private var isSearching
 
     @State private var showingAddProjectSheet = false
     @State private var showingAddGroupSheet = false
@@ -18,56 +19,52 @@ struct ProjectSidebar: View {
     @State private var showingUnsavedAlert = false
     @State private var pendingProjectID: UUID?
 
+    private var showSearchResults: Bool {
+        let result = self.isSearching && (
+            self.windowState.isGlobalSearching || !self.windowState.globalSearchResults.isEmpty
+        )
+        DZLog(
+            "showSearchResults: \(result) (isSearching=\(self.isSearching), isGlobalSearching=\(self.windowState.isGlobalSearching), resultsCount=\(self.windowState.globalSearchResults.count))"
+        )
+        return result
+    }
+
     var body: some View {
         @Bindable var windowState = self.windowState
 
-        SidebarOutlineView(
-            settings: self.windowState.services.settings,
-            selectedProjectID: $windowState.selectedProjectID,
-            onAddProject: { groupID in
-                self.targetGroupID = groupID
-                self.showingAddProjectSheet = true
-            },
-            onAddGroup: { groupID in
-                self.targetGroupID = groupID
-                self.showingAddGroupSheet = true
+        self.sidebarContent
+            .navigationTitle(String(localized: "Projects", comment: "Sidebar title"))
+            .sheet(isPresented: self.$showingAddProjectSheet) {
+                AddProjectSheet(targetGroupID: self.targetGroupID)
             }
-        )
-        .navigationTitle(String(localized: "Projects", comment: "Sidebar title"))
-        .safeAreaInset(edge: .bottom) {
-            self.bottomBar
-        }
-        .sheet(isPresented: self.$showingAddProjectSheet) {
-            AddProjectSheet(targetGroupID: self.targetGroupID)
-        }
-        .sheet(isPresented: self.$showingAddGroupSheet) {
-            AddGroupSheet(targetGroupID: self.targetGroupID)
-        }
-        .onChange(of: self.windowState.selectedProjectID) { oldValue, newValue in
-            DZLog("ProjectSidebar onChange: \(String(describing: oldValue)) -> \(String(describing: newValue))")
-            self.handleProjectSelectionChange(from: oldValue, to: newValue)
-        }
-        .alert(
-            String(localized: "Unsaved Changes", comment: "Unsaved changes alert title"),
-            isPresented: self.$showingUnsavedAlert
-        ) {
-            Button(String(localized: "Save", comment: "Save button")) {
-                self.windowState.saveBodyChanges()
-                self.commitPendingProjectSelection()
+            .sheet(isPresented: self.$showingAddGroupSheet) {
+                AddGroupSheet(targetGroupID: self.targetGroupID)
             }
-            Button(String(localized: "Discard", comment: "Discard button"), role: .destructive) {
-                self.windowState.discardBodyChanges()
-                self.commitPendingProjectSelection()
+            .onChange(of: self.windowState.selectedProjectID) { oldValue, newValue in
+                DZLog("ProjectSidebar onChange: \(String(describing: oldValue)) -> \(String(describing: newValue))")
+                self.handleProjectSelectionChange(from: oldValue, to: newValue)
             }
-            Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
-                self.revertProjectSelection()
+            .alert(
+                String(localized: "Unsaved Changes", comment: "Unsaved changes alert title"),
+                isPresented: self.$showingUnsavedAlert
+            ) {
+                Button(String(localized: "Save", comment: "Save button")) {
+                    self.windowState.saveBodyChanges()
+                    self.commitPendingProjectSelection()
+                }
+                Button(String(localized: "Discard", comment: "Discard button"), role: .destructive) {
+                    self.windowState.discardBodyChanges()
+                    self.commitPendingProjectSelection()
+                }
+                Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
+                    self.revertProjectSelection()
+                }
+            } message: {
+                Text(String(
+                    localized: "Do you want to save your changes?",
+                    comment: "Unsaved changes alert message"
+                ))
             }
-        } message: {
-            Text(String(
-                localized: "Do you want to save your changes?",
-                comment: "Unsaved changes alert message"
-            ))
-        }
     }
 
     private func handleProjectSelectionChange(from oldID: UUID?, to newID: UUID?) {
@@ -104,6 +101,30 @@ struct ProjectSidebar: View {
     private func revertProjectSelection() {
         // Selection was already reverted, just clear pending
         self.pendingProjectID = nil
+    }
+
+    @ViewBuilder
+    private var sidebarContent: some View {
+        if self.showSearchResults {
+            GlobalSearchResultsList()
+        } else {
+            @Bindable var windowState = self.windowState
+            SidebarOutlineView(
+                settings: self.windowState.services.settings,
+                selectedProjectID: $windowState.selectedProjectID,
+                onAddProject: { groupID in
+                    self.targetGroupID = groupID
+                    self.showingAddProjectSheet = true
+                },
+                onAddGroup: { groupID in
+                    self.targetGroupID = groupID
+                    self.showingAddGroupSheet = true
+                }
+            )
+            .safeAreaInset(edge: .bottom) {
+                self.bottomBar
+            }
+        }
     }
 
     private var bottomBar: some View {

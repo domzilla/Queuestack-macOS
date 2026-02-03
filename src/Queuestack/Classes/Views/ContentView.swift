@@ -6,6 +6,7 @@
 //  Copyright © 2026 Dominic Rodemer. All rights reserved.
 //
 
+import DZFoundation
 import SwiftUI
 
 struct ContentView: View {
@@ -46,6 +47,20 @@ private struct WindowContent: View {
             ItemDetailView()
         }
         .navigationSplitViewStyle(.balanced)
+        .searchable(
+            text: self.$windowState.globalSearchQuery,
+            placement: .sidebar,
+            prompt: String(localized: "Search all projects...", comment: "Global search placeholder")
+        )
+        .task(id: self.windowState.globalSearchQuery) {
+            // Debounce: wait 300ms before searching
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+                await self.windowState.performGlobalSearch()
+            } catch {
+                // Task cancelled (user typed more) - no action needed
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
@@ -55,38 +70,6 @@ private struct WindowContent: View {
                 }
                 .disabled(self.windowState.selectedProject == nil)
                 .help(String(localized: "Create new item", comment: "Tooltip for new item button"))
-            }
-
-            ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                    TextField(
-                        String(localized: "Search globally...", comment: "Global search placeholder"),
-                        text: self.$windowState.globalSearchQuery
-                    )
-                    .textFieldStyle(.plain)
-                    .onSubmit {
-                        Task {
-                            await self.windowState.performGlobalSearch()
-                        }
-                    }
-
-                    if !self.windowState.globalSearchQuery.isEmpty {
-                        Button {
-                            self.windowState.globalSearchQuery = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .frame(width: 180)
-                .background(Color(nsColor: .textBackgroundColor).opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
         .sheet(isPresented: self.$showingNewItemSheet) {
