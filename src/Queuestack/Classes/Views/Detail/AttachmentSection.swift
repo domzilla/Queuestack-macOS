@@ -7,6 +7,7 @@
 //
 
 import DZFoundation
+import Quartz
 import SwiftUI
 
 struct AttachmentSection: View {
@@ -19,6 +20,8 @@ struct AttachmentSection: View {
     @State private var isProcessing = false
     @State private var selectedIndices: Set<Int> = []
     @State private var lastSelectedIndex: Int?
+    @State private var showingQuickLook = false
+    @State private var quickLookIndex = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -54,6 +57,18 @@ struct AttachmentSection: View {
             }
             return .ignored
         }
+        .onKeyPress(keys: [.space], phases: .down) { _ in
+            if let firstSelected = self.selectedIndices.min() {
+                self.showQuickLookPreview(at: firstSelected)
+                return .handled
+            }
+            return .ignored
+        }
+        .quickLookPreview(
+            urls: self.previewableURLs,
+            selectedIndex: self.$quickLookIndex,
+            isPresented: self.$showingQuickLook
+        )
         .alert(
             String(localized: "Add URL", comment: "Add URL alert title"),
             isPresented: self.$showingURLAlert
@@ -111,6 +126,7 @@ struct AttachmentSection: View {
 
     private func attachmentRow(_ attachment: String, at index: Int) -> some View {
         let isSelected = self.selectedIndices.contains(index)
+        let canPreview = self.canQuickLookPreview(attachment)
 
         return HStack(spacing: 8) {
             Text(self.displayName(for: attachment))
@@ -119,6 +135,17 @@ struct AttachmentSection: View {
                 .foregroundStyle(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : .primary)
 
             Spacer()
+
+            if canPreview {
+                Button {
+                    self.showQuickLookPreview(at: index)
+                } label: {
+                    Image(systemName: "eye")
+                        .foregroundStyle(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "Quick Look", comment: "Quick Look button tooltip"))
+            }
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 8)
@@ -327,6 +354,38 @@ struct AttachmentSection: View {
                 DZErrorLog(error)
             }
             self.isProcessing = false
+        }
+    }
+
+    // MARK: - Quick Look
+
+    /// Returns file URLs for all previewable attachments (excludes web URLs).
+    private var previewableURLs: [URL] {
+        self.item.attachments.compactMap { attachment in
+            guard !self.isURL(attachment) else { return nil }
+            let url = self.attachmentURL(for: attachment)
+            guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+            return url
+        }
+    }
+
+    /// Returns whether the attachment can be previewed with Quick Look.
+    private func canQuickLookPreview(_ attachment: String) -> Bool {
+        guard !self.isURL(attachment) else { return false }
+        let url = self.attachmentURL(for: attachment)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// Shows the Quick Look preview for the attachment at the specified index.
+    private func showQuickLookPreview(at index: Int) {
+        let attachment = self.item.attachments[index]
+        guard self.canQuickLookPreview(attachment) else { return }
+
+        // Find the index in previewable URLs
+        let fileURL = self.attachmentURL(for: attachment)
+        if let previewIndex = self.previewableURLs.firstIndex(of: fileURL) {
+            self.quickLookIndex = previewIndex
+            self.showingQuickLook = true
         }
     }
 }

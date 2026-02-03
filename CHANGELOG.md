@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Quick Look preview for attachments: click eye icon or press Space bar when attachment is selected
 - Attachment support in item detail view with URL and file attachment management
 - Global search scope filter (Open/Closed/Template) with segmented control below search field
 
