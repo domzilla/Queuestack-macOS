@@ -202,14 +202,43 @@ extension AttachmentTableView {
 
         // MARK: - Actions
 
-        func toggleQuickLook() {
-            guard let tableView, tableView.selectedRow >= 0 else { return }
+        /// Toggles Quick Look panel for the given row, or the selected row if nil.
+        func toggleQuickLook(forRow row: Int? = nil) {
+            let targetRow = row ?? self.tableView?.selectedRow ?? -1
+            guard targetRow >= 0, targetRow < self.attachments.count else { return }
 
+            let attachment = self.attachments[targetRow]
+            guard self.canQuickLook(attachment) else { return }
+
+            // If panel is visible, close it
             if QLPreviewPanel.sharedPreviewPanelExists(), QLPreviewPanel.shared()!.isVisible {
                 QLPreviewPanel.shared()!.orderOut(nil)
-            } else {
-                QLPreviewPanel.shared()!.makeKeyAndOrderFront(nil)
+                return
             }
+
+            // Select the row
+            self.tableView?.selectRowIndexes(IndexSet(integer: targetRow), byExtendingSelection: false)
+
+            // Make table view first responder so panel finds it via responder chain
+            if let tableView = self.tableView {
+                tableView.window?.makeFirstResponder(tableView)
+            }
+
+            let panel = QLPreviewPanel.shared()!
+
+            // Ensure we're the data source
+            panel.dataSource = self
+            panel.delegate = self
+
+            // Calculate the preview index
+            let url = self.attachmentURL(for: attachment)
+            if let previewIndex = self.previewableURLs.firstIndex(of: url) {
+                panel.currentPreviewItemIndex = previewIndex
+            }
+
+            // Reload and show
+            panel.reloadData()
+            panel.makeKeyAndOrderFront(nil)
         }
 
         func deleteSelected() {
@@ -231,30 +260,26 @@ extension AttachmentTableView {
             let identifier = NSUserInterfaceItemIdentifier("AttachmentCell")
             let attachment = self.attachments[row]
 
-            let cellView: NSTableCellView
-            if let reused = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView {
+            let cellView: AttachmentCellView
+            if let reused = tableView.makeView(withIdentifier: identifier, owner: self) as? AttachmentCellView {
                 cellView = reused
             } else {
-                cellView = NSTableCellView()
+                cellView = AttachmentCellView()
                 cellView.identifier = identifier
-
-                let textField = NSTextField(labelWithString: "")
-                textField.translatesAutoresizingMaskIntoConstraints = false
-                textField.lineBreakMode = .byTruncatingMiddle
-                textField.cell?.truncatesLastVisibleLine = true
-                cellView.addSubview(textField)
-                cellView.textField = textField
-
-                NSLayoutConstraint.activate([
-                    textField.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 8),
-                    textField.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -8),
-                    textField.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
-                ])
             }
 
             cellView.textField?.stringValue = self.displayName(for: attachment)
+            cellView.eyeButton.isHidden = !self.canQuickLook(attachment)
+            cellView.eyeButton.tag = row
+            cellView.eyeButton.target = self
+            cellView.eyeButton.action = #selector(self.eyeButtonClicked(_:))
 
             return cellView
+        }
+
+        @objc
+        func eyeButtonClicked(_ sender: NSButton) {
+            self.toggleQuickLook(forRow: sender.tag)
         }
 
         func tableView(_: NSTableView, rowViewForRow _: Int) -> NSTableRowView? {
@@ -436,6 +461,53 @@ extension AttachmentTableView {
             }
             return false
         }
+    }
+}
+
+// MARK: - AttachmentCellView
+
+/// Custom cell view with text field and eye button for Quick Look.
+private final class AttachmentCellView: NSTableCellView {
+    let eyeButton: NSButton
+
+    override init(frame frameRect: NSRect) {
+        self.eyeButton = NSButton(frame: .zero)
+        super.init(frame: frameRect)
+        self.setupViews()
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupViews() {
+        let textField = NSTextField(labelWithString: "")
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.lineBreakMode = .byTruncatingMiddle
+        textField.cell?.truncatesLastVisibleLine = true
+        self.addSubview(textField)
+        self.textField = textField
+
+        self.eyeButton.translatesAutoresizingMaskIntoConstraints = false
+        self.eyeButton.bezelStyle = .accessoryBarAction
+        self.eyeButton.setButtonType(.momentaryPushIn)
+        self.eyeButton.image = NSImage(systemSymbolName: "eye", accessibilityDescription: "Quick Look")
+        self.eyeButton.imagePosition = .imageOnly
+        self.eyeButton.contentTintColor = .secondaryLabelColor
+        self.eyeButton.toolTip = String(localized: "Quick Look", comment: "Quick Look button tooltip")
+        self.addSubview(self.eyeButton)
+
+        NSLayoutConstraint.activate([
+            textField.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 8),
+            textField.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            textField.trailingAnchor.constraint(equalTo: self.eyeButton.leadingAnchor, constant: -4),
+
+            self.eyeButton.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -8),
+            self.eyeButton.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            self.eyeButton.widthAnchor.constraint(equalToConstant: 20),
+            self.eyeButton.heightAnchor.constraint(equalToConstant: 20),
+        ])
     }
 }
 
