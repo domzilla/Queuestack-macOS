@@ -126,11 +126,8 @@ struct ItemDetailView: View {
                 VStack(spacing: 0) {
                     Divider()
 
-                    ScrollView {
-                        AttachmentSection(item: item)
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    AttachmentSection(item: item)
+                        .padding()
                 }
                 .frame(minHeight: 80)
             }

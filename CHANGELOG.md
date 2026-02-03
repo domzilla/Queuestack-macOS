@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Quick Look preview for attachments: click eye icon or press Space bar when attachment is selected
+- Quick Look preview for attachments: press Space bar to toggle; arrow keys navigate while panel is open
 - Attachment support in item detail view with URL and file attachment management
 - Global search scope filter (Open/Closed/Template) with segmented control below search field
 
@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Selecting search results within the same project now works correctly
 
 ### Changed
+- Attachment list refactored to NSTableView for native keyboard navigation and Quick Look integration
 - Item list header reordered: search field on top, filter segmented control below
 - Global search now uses native `.searchable` modifier with sidebar placement; results display inline in sidebar
 - Project sidebar now uses NSOutlineView for native drag & drop support (reorder, move between groups, drop folders from Finder)
