@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored
+- Extract `AttachmentNSTableView` from `AttachmentTableView.swift` into separate file
+- Extract `AttachmentCellView` from `AttachmentTableView.swift` into separate file
+- Extract `AttachmentRowView` from `AttachmentTableView.swift` into separate file
+
 ### Added
 - URL format validation for attachment URLs (accepts only http/https schemes)
 - Duplicate project detection when adding projects via file picker

@@ -94,42 +94,6 @@ struct AttachmentTableView: NSViewRepresentable {
     }
 }
 
-// MARK: - Custom NSTableView
-
-/// Custom NSTableView that handles keyboard events and Quick Look panel control.
-final class AttachmentNSTableView: NSTableView {
-    weak var coordinator: AttachmentTableView.Coordinator?
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func keyDown(with event: NSEvent) {
-        if event.keyCode == 49 { // Space bar
-            self.coordinator?.toggleQuickLook()
-        } else if event.keyCode == 51, event.modifierFlags.contains(.command) { // Cmd+Delete
-            self.coordinator?.deleteSelected()
-        } else {
-            super.keyDown(with: event)
-        }
-    }
-
-    // MARK: - Quick Look Panel Control
-
-    override nonisolated func acceptsPreviewPanelControl(_: QLPreviewPanel!) -> Bool {
-        true
-    }
-
-    override nonisolated func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
-        MainActor.assumeIsolated {
-            panel.dataSource = self.coordinator
-            panel.delegate = self.coordinator
-        }
-    }
-
-    override nonisolated func endPreviewPanelControl(_: QLPreviewPanel!) {
-        // Panel control ended
-    }
-}
-
 // MARK: - Coordinator
 
 extension AttachmentTableView {
@@ -452,77 +416,5 @@ extension AttachmentTableView {
             }
             return false
         }
-    }
-}
-
-// MARK: - AttachmentCellView
-
-/// Custom cell view with text field and eye button for Quick Look.
-private final class AttachmentCellView: NSTableCellView {
-    let eyeButton: NSButton
-
-    override init(frame frameRect: NSRect) {
-        self.eyeButton = NSButton(frame: .zero)
-        super.init(frame: frameRect)
-        self.setupViews()
-    }
-
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func setupViews() {
-        let textField = NSTextField(labelWithString: "")
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.lineBreakMode = .byTruncatingMiddle
-        textField.cell?.truncatesLastVisibleLine = true
-        self.addSubview(textField)
-        self.textField = textField
-
-        self.eyeButton.translatesAutoresizingMaskIntoConstraints = false
-        self.eyeButton.bezelStyle = .accessoryBarAction
-        self.eyeButton.setButtonType(.momentaryPushIn)
-        self.eyeButton.image = NSImage(systemSymbolName: "eye", accessibilityDescription: "Quick Look")
-        self.eyeButton.imagePosition = .imageOnly
-        self.eyeButton.contentTintColor = .secondaryLabelColor
-        self.eyeButton.toolTip = String(localized: "Quick Look", comment: "Quick Look button tooltip")
-        self.addSubview(self.eyeButton)
-
-        NSLayoutConstraint.activate([
-            textField.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 8),
-            textField.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            textField.trailingAnchor.constraint(equalTo: self.eyeButton.leadingAnchor, constant: -4),
-
-            self.eyeButton.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -8),
-            self.eyeButton.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            self.eyeButton.widthAnchor.constraint(equalToConstant: 20),
-            self.eyeButton.heightAnchor.constraint(equalToConstant: 20),
-        ])
-    }
-}
-
-// MARK: - AttachmentRowView
-
-/// Custom row view with rounded background.
-private final class AttachmentRowView: NSTableRowView {
-    override func drawSelection(in _: NSRect) {
-        guard self.selectionHighlightStyle != .none else { return }
-
-        let rect = self.bounds.insetBy(dx: 0, dy: 2)
-        let path = NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4)
-
-        NSColor.selectedContentBackgroundColor.setFill()
-        path.fill()
-    }
-
-    override func drawBackground(in _: NSRect) {
-        guard !self.isSelected else { return }
-
-        let rect = self.bounds.insetBy(dx: 0, dy: 2)
-        let path = NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4)
-
-        NSColor.gray.withAlphaComponent(0.1).setFill()
-        path.fill()
     }
 }
