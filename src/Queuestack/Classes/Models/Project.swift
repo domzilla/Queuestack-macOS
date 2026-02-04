@@ -20,9 +20,9 @@ struct Project: Identifiable, Hashable, Codable {
         id: UUID = UUID(),
         name: String,
         path: URL,
-        stackDir: String = "queuestack",
-        archiveDir: String = ".archive",
-        templateDir: String = ".templates"
+        stackDir: String = CLIConstants.FileConventions.DefaultDirectories.stack,
+        archiveDir: String = CLIConstants.FileConventions.DefaultDirectories.archive,
+        templateDir: String = CLIConstants.FileConventions.DefaultDirectories.templates
     ) {
         self.id = id
         self.name = name
@@ -46,7 +46,7 @@ struct Project: Identifiable, Hashable, Codable {
 
     /// Validates that this folder contains a .queuestack file
     var isValid: Bool {
-        let configPath = self.path.appendingPathComponent(".queuestack")
+        let configPath = self.path.appendingPathComponent(CLIConstants.FileConventions.configFileName)
         return FileManager.default.fileExists(atPath: configPath.path)
     }
 }
@@ -59,14 +59,14 @@ extension Project {
 
     /// Creates a Project from a folder URL, reading config if present
     static func from(url: URL) throws -> Project {
-        let configPath = url.appendingPathComponent(".queuestack")
+        let configPath = url.appendingPathComponent(CLIConstants.FileConventions.configFileName)
         guard FileManager.default.fileExists(atPath: configPath.path) else {
             throw Error(message: "Not a queuestack project: \(url.lastPathComponent)")
         }
 
-        var stackDir = "queuestack"
-        var archiveDir = ".archive"
-        var templateDir = ".templates"
+        var stackDir = CLIConstants.FileConventions.DefaultDirectories.stack
+        var archiveDir = CLIConstants.FileConventions.DefaultDirectories.archive
+        var templateDir = CLIConstants.FileConventions.DefaultDirectories.templates
 
         // Parse .queuestack config file for custom directories
         if let configContent = try? String(contentsOf: configPath, encoding: .utf8) {

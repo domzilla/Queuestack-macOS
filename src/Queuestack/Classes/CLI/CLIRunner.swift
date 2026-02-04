@@ -13,7 +13,7 @@ import Foundation
 actor CLIRunner {
     private let binaryPath: String
 
-    init(binaryPath: String = "/opt/homebrew/bin/qs") {
+    init(binaryPath: String = CLIConstants.defaultBinaryPath) {
         self.binaryPath = binaryPath
     }
 

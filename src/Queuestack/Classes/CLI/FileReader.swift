@@ -62,7 +62,7 @@ struct FileReader {
             }
 
             // Only process markdown files
-            guard url.pathExtension == "md" else { continue }
+            guard url.pathExtension == CLIConstants.FileConventions.markdownExtension else { continue }
 
             do {
                 let item = try self.readItem(at: url, project: project)
@@ -92,7 +92,7 @@ struct FileReader {
         )
 
         while let url = enumerator?.nextObject() as? URL {
-            guard url.pathExtension == "md" else { continue }
+            guard url.pathExtension == CLIConstants.FileConventions.markdownExtension else { continue }
 
             do {
                 let item = try self.readItem(at: url, project: project)
@@ -121,7 +121,7 @@ struct FileReader {
         )
 
         while let url = enumerator?.nextObject() as? URL {
-            guard url.pathExtension == "md" else { continue }
+            guard url.pathExtension == CLIConstants.FileConventions.markdownExtension else { continue }
 
             do {
                 let item = try self.readItem(at: url, project: project)

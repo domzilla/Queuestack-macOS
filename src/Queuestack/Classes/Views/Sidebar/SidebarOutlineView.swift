@@ -13,6 +13,9 @@ import UniformTypeIdentifiers
 // MARK: - SidebarOutlineView
 
 struct SidebarOutlineView: NSViewRepresentable {
+    private static let columnIdentifier = NSUserInterfaceItemIdentifier("main")
+    private static let cellIdentifier = NSUserInterfaceItemIdentifier("SidebarCell")
+
     @Bindable var settings: SettingsManager
     @Binding var selectedProjectID: UUID?
     let onAddProject: (UUID?) -> Void
@@ -33,7 +36,7 @@ struct SidebarOutlineView: NSViewRepresentable {
         outlineView.allowsMultipleSelection = false
         outlineView.allowsEmptySelection = true
 
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("main"))
+        let column = NSTableColumn(identifier: Self.columnIdentifier)
         column.isEditable = true
         outlineView.addTableColumn(column)
         outlineView.outlineTableColumn = column
@@ -181,14 +184,15 @@ extension SidebarOutlineView {
         func outlineView(_ outlineView: NSOutlineView, viewFor _: NSTableColumn?, item: Any) -> NSView? {
             guard let node = item as? SidebarNode else { return nil }
 
-            let identifier = NSUserInterfaceItemIdentifier("SidebarCell")
             let cellView: NSTableCellView
-
-            if let reused = outlineView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView {
+            if
+                let reused = outlineView.makeView(withIdentifier: SidebarOutlineView.cellIdentifier, owner: self)
+                as? NSTableCellView
+            {
                 cellView = reused
             } else {
                 cellView = NSTableCellView()
-                cellView.identifier = identifier
+                cellView.identifier = SidebarOutlineView.cellIdentifier
 
                 let imageView = NSImageView()
                 imageView.translatesAutoresizingMaskIntoConstraints = false

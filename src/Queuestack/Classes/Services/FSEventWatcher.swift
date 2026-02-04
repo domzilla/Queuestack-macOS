@@ -132,7 +132,7 @@ final class FSEventWatcher: @unchecked Sendable {
         var changedMarkdownPaths: [String] = []
         for i in 0..<numEvents {
             let path = paths[i]
-            if path.hasSuffix(".md") {
+            if path.hasSuffix(CLIConstants.FileConventions.markdownExtensionWithDot) {
                 changedMarkdownPaths.append(path)
                 DZLog("FSEvent: \(path)")
             }

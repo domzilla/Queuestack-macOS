@@ -106,7 +106,8 @@ struct AttachmentSection: View {
     // MARK: - Helpers
 
     private func isURL(_ attachment: String) -> Bool {
-        attachment.hasPrefix("http://") || attachment.hasPrefix("https://")
+        attachment.hasPrefix(CLIConstants.FileConventions.URLScheme.http) || attachment
+            .hasPrefix(CLIConstants.FileConventions.URLScheme.https)
     }
 
     /// Returns the URL of the attachments directory for the current item.
@@ -115,7 +116,7 @@ struct AttachmentSection: View {
         let itemURL = self.item.filePath
         let stem = itemURL.deletingPathExtension().lastPathComponent
         return itemURL.deletingLastPathComponent()
-            .appendingPathComponent("\(stem).attachments", isDirectory: true)
+            .appendingPathComponent(stem + CLIConstants.FileConventions.attachmentDirectorySuffix, isDirectory: true)
     }
 
     /// Resolves an attachment filename to its full file URL.

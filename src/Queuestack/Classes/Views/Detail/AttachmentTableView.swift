@@ -14,6 +14,9 @@ import SwiftUI
 // MARK: - AttachmentTableView
 
 struct AttachmentTableView: NSViewRepresentable {
+    private static let columnIdentifier = NSUserInterfaceItemIdentifier("attachment")
+    private static let cellIdentifier = NSUserInterfaceItemIdentifier("AttachmentCell")
+
     let attachments: [String]
     let attachmentsDirectoryURL: URL
     let onOpen: (Int) -> Void
@@ -39,7 +42,7 @@ struct AttachmentTableView: NSViewRepresentable {
         tableView.allowsEmptySelection = true
         tableView.usesAlternatingRowBackgroundColors = false
 
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("attachment"))
+        let column = NSTableColumn(identifier: Self.columnIdentifier)
         column.isEditable = false
         tableView.addTableColumn(column)
 
@@ -137,7 +140,8 @@ extension AttachmentTableView {
         // MARK: - Helpers
 
         private func isURL(_ attachment: String) -> Bool {
-            attachment.hasPrefix("http://") || attachment.hasPrefix("https://")
+            attachment.hasPrefix(CLIConstants.FileConventions.URLScheme.http)
+                || attachment.hasPrefix(CLIConstants.FileConventions.URLScheme.https)
         }
 
         private func attachmentURL(for attachment: String) -> URL {
@@ -211,15 +215,17 @@ extension AttachmentTableView {
         // MARK: - NSTableViewDelegate
 
         func tableView(_ tableView: NSTableView, viewFor _: NSTableColumn?, row: Int) -> NSView? {
-            let identifier = NSUserInterfaceItemIdentifier("AttachmentCell")
             let attachment = self.attachments[row]
 
             let cellView: AttachmentCellView
-            if let reused = tableView.makeView(withIdentifier: identifier, owner: self) as? AttachmentCellView {
+            if
+                let reused = tableView.makeView(withIdentifier: AttachmentTableView.cellIdentifier, owner: self)
+                as? AttachmentCellView
+            {
                 cellView = reused
             } else {
                 cellView = AttachmentCellView()
-                cellView.identifier = identifier
+                cellView.identifier = AttachmentTableView.cellIdentifier
             }
 
             cellView.textField?.stringValue = self.displayName(for: attachment)
@@ -409,7 +415,7 @@ extension AttachmentTableView {
         func previewPanel(_: QLPreviewPanel!, handle event: NSEvent!) -> Bool {
             if event.type == .keyDown {
                 // Let arrow keys propagate to table view to change selection
-                if event.keyCode == 125 || event.keyCode == 126 { // Down/Up arrows
+                if event.keyCode == KeyCode.downArrow || event.keyCode == KeyCode.upArrow {
                     self.tableView?.keyDown(with: event)
                     return true
                 }

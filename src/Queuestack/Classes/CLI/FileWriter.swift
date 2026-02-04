@@ -20,14 +20,15 @@ struct FileWriter {
         let content = try String(contentsOf: item.filePath, encoding: .utf8)
 
         // Split at frontmatter delimiters
-        let components = content.components(separatedBy: "---")
+        let components = content.components(separatedBy: CLIConstants.FileConventions.frontmatterDelimiter)
         guard components.count >= 3 else {
             throw Error(message: "Invalid frontmatter in \(item.filePath.lastPathComponent)")
         }
 
         // Reconstruct: empty + frontmatter + new body
         let frontmatter = components[1]
-        let newContent = "---\(frontmatter)---\n\n\(newBody)\n"
+        let delimiter = CLIConstants.FileConventions.frontmatterDelimiter
+        let newContent = "\(delimiter)\(frontmatter)\(delimiter)\n\n\(newBody)\n"
 
         try newContent.write(to: item.filePath, atomically: true, encoding: .utf8)
     }
@@ -36,7 +37,7 @@ struct FileWriter {
     func updateItem(at path: URL, title: String?, labels: [String]?, body: String?) throws {
         let content = try String(contentsOf: path, encoding: .utf8)
 
-        let components = content.components(separatedBy: "---")
+        let components = content.components(separatedBy: CLIConstants.FileConventions.frontmatterDelimiter)
         guard components.count >= 3 else {
             throw Error(message: "Invalid frontmatter in \(path.lastPathComponent)")
         }
@@ -89,7 +90,8 @@ struct FileWriter {
 
         let finalBody = body ?? existingBody
         let newFrontmatter = frontmatterLines.joined(separator: "\n")
-        let newContent = "---\(newFrontmatter)---\n\n\(finalBody)\n"
+        let delimiter = CLIConstants.FileConventions.frontmatterDelimiter
+        let newContent = "\(delimiter)\(newFrontmatter)\(delimiter)\n\n\(finalBody)\n"
 
         try newContent.write(to: path, atomically: true, encoding: .utf8)
     }

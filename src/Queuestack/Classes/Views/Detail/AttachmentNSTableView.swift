@@ -16,9 +16,9 @@ final class AttachmentNSTableView: NSTableView {
     override var acceptsFirstResponder: Bool { true }
 
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 49 { // Space bar
+        if event.keyCode == KeyCode.space {
             self.coordinator?.toggleQuickLook()
-        } else if event.keyCode == 51, event.modifierFlags.contains(.command) { // Cmd+Delete
+        } else if event.keyCode == KeyCode.delete, event.modifierFlags.contains(.command) {
             self.coordinator?.deleteSelected()
         } else {
             super.keyDown(with: event)

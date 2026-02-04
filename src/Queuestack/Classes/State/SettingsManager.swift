@@ -30,7 +30,7 @@ final class SettingsManager {
     // MARK: - Initialization
 
     init() {
-        self.cliBinaryPath = UserDefaults.standard.string(forKey: Keys.cliBinaryPath) ?? "/opt/homebrew/bin/qs"
+        self.cliBinaryPath = UserDefaults.standard.string(forKey: Keys.cliBinaryPath) ?? CLIConstants.defaultBinaryPath
         self.sidebarTree = []
         self.loadSidebarTree()
     }
@@ -180,7 +180,7 @@ final class SettingsManager {
     @discardableResult
     func validateAndAddProject(from url: URL, toGroupWithID groupID: UUID?) throws -> Project {
         // Check for .queuestack file
-        let configPath = url.appendingPathComponent(".queuestack")
+        let configPath = url.appendingPathComponent(CLIConstants.FileConventions.configFileName)
         guard FileManager.default.fileExists(atPath: configPath.path) else {
             throw ProjectAdditionError.notQueuestackProject(name: url.lastPathComponent)
         }

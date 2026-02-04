@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Refactored
+- Extract CLI constants to `Constants/CLIConstants.swift` with command-based structure mirroring the CLI hierarchy:
+  - `CLIConstants.List`, `CLIConstants.Search`, `CLIConstants.New`, `CLIConstants.Update`, etc.
+  - Each command has its own `Flag` enum showing which flags are valid for that command
+  - `CLIConstants.FileConventions` for CLI-defined file conventions (extensions, delimiters, directory names)
+- Extract macOS key codes to `Constants/KeyCodes.swift`
+- Add local cell/column identifier constants to `SidebarOutlineView` and `AttachmentTableView`
 - Extract `AttachmentNSTableView` from `AttachmentTableView.swift` into separate file
 - Extract `AttachmentCellView` from `AttachmentTableView.swift` into separate file
 - Extract `AttachmentRowView` from `AttachmentTableView.swift` into separate file
