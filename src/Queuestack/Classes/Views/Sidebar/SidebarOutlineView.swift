@@ -114,12 +114,6 @@ struct SidebarOutlineView: NSViewRepresentable {
     }
 }
 
-// MARK: - Pasteboard Type
-
-extension NSPasteboard.PasteboardType {
-    static let sidebarNode = NSPasteboard.PasteboardType("com.dominicrodemer.queuestack.sidebarnode")
-}
-
 // MARK: - Coordinator
 
 extension SidebarOutlineView {

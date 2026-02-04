@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extract `AttachmentNSTableView` from `AttachmentTableView.swift` into separate file
 - Extract `AttachmentCellView` from `AttachmentTableView.swift` into separate file
 - Extract `AttachmentRowView` from `AttachmentTableView.swift` into separate file
+- Extract `ProjectAdditionError` from `SettingsManager.swift` to `Models/Errors/`
+- Extract `FocusedWindowStateKey` from `QueuestackApp.swift` to dedicated file
+- Extract `Notification.Name` extensions to `Constants/NotificationNames.swift`
+- Extract `NSPasteboard.PasteboardType` extension to `Constants/PasteboardTypes.swift`
 
 ### Added
 - URL format validation for attachment URLs (accepts only http/https schemes)

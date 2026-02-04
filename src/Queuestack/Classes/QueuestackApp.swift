@@ -51,23 +51,3 @@ struct QueuestackApp: App {
         }
     }
 }
-
-// MARK: - Notification Names
-
-extension Notification.Name {
-    static let createNewItem = Notification.Name("createNewItem")
-    static let createNewTemplate = Notification.Name("createNewTemplate")
-}
-
-// MARK: - Focused Value for Window State
-
-struct FocusedWindowStateKey: FocusedValueKey {
-    typealias Value = WindowState
-}
-
-extension FocusedValues {
-    var windowState: WindowState? {
-        get { self[FocusedWindowStateKey.self] }
-        set { self[FocusedWindowStateKey.self] = newValue }
-    }
-}
