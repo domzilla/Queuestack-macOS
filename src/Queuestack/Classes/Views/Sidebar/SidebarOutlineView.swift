@@ -34,7 +34,7 @@ struct SidebarOutlineView: NSViewRepresentable {
         outlineView.allowsEmptySelection = true
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("main"))
-        column.isEditable = false
+        column.isEditable = true
         outlineView.addTableColumn(column)
         outlineView.outlineTableColumn = column
 
@@ -61,7 +61,7 @@ struct SidebarOutlineView: NSViewRepresentable {
         menu.addItem(NSMenuItem.separator())
 
         let renameItem = NSMenuItem(
-            title: String(localized: "Rename…", comment: "Context menu"),
+            title: String(localized: "Rename", comment: "Context menu"),
             action: #selector(Coordinator.renameItem(_:)),
             keyEquivalent: ""
         )
@@ -93,6 +93,9 @@ struct SidebarOutlineView: NSViewRepresentable {
         context.coordinator.onAddGroup = self.onAddGroup
         context.coordinator.onProjectAddError = self.onProjectAddError
 
+        // End any active editing before reloading to ensure changes are committed
+        outlineView.window?.endEditing(for: nil)
+
         // Reload data and restore expansion state
         outlineView.reloadData()
         context.coordinator.restoreExpansionState()
@@ -120,7 +123,9 @@ extension NSPasteboard.PasteboardType {
 // MARK: - Coordinator
 
 extension SidebarOutlineView {
-    final class Coordinator: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate, NSMenuDelegate {
+    final class Coordinator: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate, NSMenuDelegate,
+        NSTextFieldDelegate
+    {
         var settings: SettingsManager
         var selectedProjectID: UUID?
         var onSelectionChanged: (UUID?) -> Void
@@ -196,9 +201,13 @@ extension SidebarOutlineView {
                 cellView.addSubview(imageView)
                 cellView.imageView = imageView
 
-                let textField = NSTextField(labelWithString: "")
+                let textField = NSTextField()
                 textField.translatesAutoresizingMaskIntoConstraints = false
                 textField.lineBreakMode = .byTruncatingTail
+                textField.isBordered = false
+                textField.drawsBackground = false
+                textField.isEditable = true
+                textField.delegate = self
                 cellView.addSubview(textField)
                 cellView.textField = textField
 
@@ -213,12 +222,17 @@ extension SidebarOutlineView {
                 ])
             }
 
+            // Store node ID for retrieval during editing
+            cellView.objectValue = node.id
+
             switch node {
             case let .group(group):
                 cellView.textField?.stringValue = group.name
+                cellView.textField?.isEditable = true
                 cellView.imageView?.image = NSImage(systemSymbolName: "archivebox", accessibilityDescription: nil)
             case let .project(project):
                 cellView.textField?.stringValue = project.name
+                cellView.textField?.isEditable = false
                 cellView.imageView?.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
             }
 
@@ -401,32 +415,11 @@ extension SidebarOutlineView {
             let row = outlineView.row(forItem: node)
             guard
                 row >= 0,
-                outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) is NSTableCellView else { return }
+                let cellView = outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) as? NSTableCellView,
+                let textField = cellView.textField else { return }
 
-            // Show rename alert
-            let alert = NSAlert()
-            alert.messageText = String(localized: "Rename Group", comment: "Rename alert title")
-            alert.addButton(withTitle: String(localized: "Rename", comment: "Rename button"))
-            alert.addButton(withTitle: String(localized: "Cancel", comment: "Cancel button"))
-
-            let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-            textField.stringValue = node.name
-            alert.accessoryView = textField
-
-            alert.beginSheetModal(for: outlineView.window!) { response in
-                if response == .alertFirstButtonReturn {
-                    let newName = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !newName.isEmpty {
-                        Task { @MainActor in
-                            self.settings.renameNode(id: node.id, to: newName)
-                        }
-                    }
-                }
-            }
-            // Focus the text field after the sheet appears
-            DispatchQueue.main.async {
-                textField.selectText(nil)
-            }
+            outlineView.window?.makeFirstResponder(textField)
+            textField.selectText(nil)
         }
 
         @objc
@@ -438,6 +431,30 @@ extension SidebarOutlineView {
                     self.onSelectionChanged(nil)
                 }
             }
+        }
+
+        // MARK: - Text Field Delegate
+
+        func controlTextDidEndEditing(_ notification: Notification) {
+            guard
+                let textField = notification.object as? NSTextField,
+                let cellView = textField.superview as? NSTableCellView,
+                let nodeID = cellView.objectValue as? UUID else { return }
+
+            // Only allow renaming groups
+            guard
+                let node = self.settings.sidebarTree.findNode(id: nodeID),
+                node.isGroup else { return }
+
+            let newName = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !newName.isEmpty else {
+                // Revert to original name by reloading
+                self.outlineView?.reloadData()
+                self.restoreExpansionState()
+                return
+            }
+
+            self.settings.renameNode(id: nodeID, to: newName)
         }
 
         // MARK: - Helpers
