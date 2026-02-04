@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Global search scope filter (Open/Closed/Template) with segmented control below search field
 
 ### Fixed
+- Item rename showing spurious file-not-found error; CLI output parsing now correctly extracts path from "Updated item:" message
 - Default window size too small on first launch; set to 1100x700 with proper sidebar column width
 - Quick Look panel now resizes properly when navigating between attachments of different sizes
 - Global search now triggers on typing with 300ms debounce instead of requiring Enter key

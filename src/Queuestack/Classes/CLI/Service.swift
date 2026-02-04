@@ -217,12 +217,17 @@ final class Service {
             throw error
         }
 
-        // File might be renamed, need to find the new path
-        // CLI outputs the new file path on rename
-        let newPath: URL = if let relativePath = result.lines.first {
-            project.path.appendingPathComponent(relativePath)
+        // CLI outputs "✓ Updated item: <path>" - extract the path portion
+        // Find first line containing ".md" and extract path after last ": "
+        let newPath: URL
+        if
+            let outputLine = result.lines.first(where: { $0.contains(".md") }),
+            let pathStart = outputLine.range(of: ": ", options: .backwards)
+        {
+            let relativePath = String(outputLine[pathStart.upperBound...])
+            newPath = project.path.appendingPathComponent(relativePath)
         } else {
-            item.filePath
+            newPath = item.filePath
         }
 
         return try self.fileReader.readItem(at: newPath, project: project)
