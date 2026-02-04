@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Selecting search results within the same project now works correctly
 
 ### Changed
+- Disable window tabbing; app uses separate windows instead of tabs
 - Quick Look preview now shows single item at a time (Finder-like behavior) instead of multi-item panel with navigation arrows
 - Attachment list refactored to NSTableView for native keyboard navigation and Quick Look integration
 - Item list header reordered: search field on top, filter segmented control below

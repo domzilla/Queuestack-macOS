@@ -6,6 +6,7 @@
 //  Copyright © 2026 Dominic Rodemer. All rights reserved.
 //
 
+import AppKit
 import SwiftUI
 
 @main
@@ -13,6 +14,11 @@ struct QueuestackApp: App {
     @State private var services = AppServices()
     @FocusedValue(\.windowState) private var focusedWindowState
     @Environment(\.openWindow) private var openWindow
+
+    init() {
+        // Disable window tabbing - app uses separate windows, not tabs
+        NSWindow.allowsAutomaticWindowTabbing = false
+    }
 
     var body: some Scene {
         WindowGroup(id: "main") {
