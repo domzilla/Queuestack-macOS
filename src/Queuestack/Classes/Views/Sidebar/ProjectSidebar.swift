@@ -51,26 +51,17 @@ struct ProjectSidebar: View {
                 DZLog("ProjectSidebar onChange: \(String(describing: oldValue)) -> \(String(describing: newValue))")
                 self.handleProjectSelectionChange(from: oldValue, to: newValue)
             }
-            .alert(
-                String(localized: "Unsaved Changes", comment: "Unsaved changes alert title"),
-                isPresented: self.$showingUnsavedAlert
-            ) {
-                Button(String(localized: "Save", comment: "Save button")) {
+            .unsavedChangesAlert(isPresented: self.$showingUnsavedAlert) { action in
+                switch action {
+                case .save:
                     self.windowState.saveBodyChanges()
                     self.commitPendingProjectSelection()
-                }
-                Button(String(localized: "Discard", comment: "Discard button"), role: .destructive) {
+                case .discard:
                     self.windowState.discardBodyChanges()
                     self.commitPendingProjectSelection()
-                }
-                Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
+                case .cancel:
                     self.revertProjectSelection()
                 }
-            } message: {
-                Text(String(
-                    localized: "Do you want to save your changes?",
-                    comment: "Unsaved changes alert message"
-                ))
             }
     }
 

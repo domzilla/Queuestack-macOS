@@ -36,6 +36,11 @@ actor CLIRunner {
             guard !self.isSuccess else { return nil }
             return Error(message: self.stderr.isEmpty ? "Command failed with exit code \(self.exitCode)" : self.stderr)
         }
+
+        /// Indicates search returned no matches (exit code 1 with "No matches" message)
+        var isNoMatchesResult: Bool {
+            self.exitCode == CLIConstants.Search.ExitCode.noMatches && self.stderr.contains("No matches")
+        }
     }
 
     struct Error: LocalizedError {

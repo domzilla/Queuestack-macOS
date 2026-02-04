@@ -18,6 +18,7 @@ struct FileReader {
 
         let parsed = try self.parser.parseMarkdownFile(content: content, filePath: path)
         let category = self.parser.extractCategory(from: path, project: project)
+        let isTemplate = path.pathComponents.contains(CLIConstants.FileConventions.DefaultDirectories.templates)
 
         return Item(
             id: parsed.id,
@@ -29,7 +30,8 @@ struct FileReader {
             attachments: parsed.attachments,
             category: category,
             body: parsed.body,
-            filePath: path
+            filePath: path,
+            isTemplate: isTemplate
         )
     }
 
@@ -42,85 +44,49 @@ struct FileReader {
 
     /// Scan all items in a project directory
     func scanAllItems(in project: Project) throws -> [Item] {
-        let fileManager = FileManager.default
-        var items: [Item] = []
-
-        guard fileManager.fileExists(atPath: project.stackURL.path) else {
-            return []
-        }
-
-        let enumerator = fileManager.enumerator(
-            at: project.stackURL,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
+        try self.scanItems(
+            in: project.stackURL,
+            project: project,
+            excluding: "/\(project.archiveDir)/"
         )
-
-        while let url = enumerator?.nextObject() as? URL {
-            // Skip archive directory (handled separately)
-            if url.path.contains("/\(project.archiveDir)/") {
-                continue
-            }
-
-            // Only process markdown files
-            guard url.pathExtension == CLIConstants.FileConventions.markdownExtension else { continue }
-
-            do {
-                let item = try self.readItem(at: url, project: project)
-                items.append(item)
-            } catch {
-                // Skip files that can't be parsed
-                continue
-            }
-        }
-
-        return items
     }
 
     /// Scan archived items
     func scanArchivedItems(in project: Project) throws -> [Item] {
-        let fileManager = FileManager.default
-        var items: [Item] = []
-
-        guard fileManager.fileExists(atPath: project.archiveURL.path) else {
-            return []
-        }
-
-        let enumerator = fileManager.enumerator(
-            at: project.archiveURL,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        )
-
-        while let url = enumerator?.nextObject() as? URL {
-            guard url.pathExtension == CLIConstants.FileConventions.markdownExtension else { continue }
-
-            do {
-                let item = try self.readItem(at: url, project: project)
-                items.append(item)
-            } catch {
-                continue
-            }
-        }
-
-        return items
+        try self.scanItems(in: project.archiveURL, project: project)
     }
 
     /// Scan template items
     func scanTemplates(in project: Project) throws -> [Item] {
+        try self.scanItems(in: project.templateURL, project: project)
+    }
+
+    /// Shared helper for scanning items in a directory
+    private func scanItems(
+        in directory: URL,
+        project: Project,
+        excluding pathSubstring: String? = nil
+    ) throws
+        -> [Item]
+    {
         let fileManager = FileManager.default
         var items: [Item] = []
 
-        guard fileManager.fileExists(atPath: project.templateURL.path) else {
+        guard fileManager.fileExists(atPath: directory.path) else {
             return []
         }
 
         let enumerator = fileManager.enumerator(
-            at: project.templateURL,
+            at: directory,
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles]
         )
 
         while let url = enumerator?.nextObject() as? URL {
+            if let excludePath = pathSubstring, url.path.contains(excludePath) {
+                continue
+            }
+
             guard url.pathExtension == CLIConstants.FileConventions.markdownExtension else { continue }
 
             do {

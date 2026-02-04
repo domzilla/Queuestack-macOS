@@ -19,19 +19,16 @@ struct Item: Identifiable, Hashable {
     var category: String?
     var body: String
     let filePath: URL
+    let isTemplate: Bool
 
     enum Status: String, Codable, Hashable {
         case open
         case closed
     }
-
-    var isTemplate: Bool {
-        self.filePath.pathComponents.contains(".templates")
-    }
 }
 
 extension Item {
-    static func placeholder(id: String = "000000-XXXXXX") -> Item {
+    static func placeholder(id: String = "000000-XXXXXX", isTemplate: Bool = false) -> Item {
         Item(
             id: id,
             title: "Untitled",
@@ -42,7 +39,8 @@ extension Item {
             attachments: [],
             category: nil,
             body: "",
-            filePath: URL(filePath: "/tmp/placeholder.md")
+            filePath: URL(filePath: "/tmp/placeholder.md"),
+            isTemplate: isTemplate
         )
     }
 }

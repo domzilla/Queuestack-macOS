@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Refactored
+- Extract `listItems(flag:in:)` helper in `Service` to eliminate duplication across list methods
+- Extract `scanItems(in:project:excluding:)` helper in `FileReader` to eliminate duplication across scan methods
+- Extract `runUpdate(item:additionalArgs:in:)` helper in `Service` for update operations
+- Create `UnsavedChangesAlert` view modifier to eliminate duplicated alert code in `ItemDetailView` and `ProjectSidebar`
+- Create `LabelToggleButton` component to eliminate duplicated label toggle UI in sheets
+- Create `CategoryPicker` component to eliminate duplicated category selection UI in sheets
+- Move 1-based index conversion for attachments into `Service` layer (fixes leaky abstraction)
+- Add `isNoMatchesResult` property to `CLIRunner.Result` to encapsulate CLI error handling (fixes leaky abstraction)
+- Change `Item.isTemplate` from computed property to stored property set by `FileReader` (fixes model coupling to file path convention)
 - Extract CLI constants to `Constants/CLIConstants.swift` with command-based structure mirroring the CLI hierarchy:
   - `CLIConstants.List`, `CLIConstants.Search`, `CLIConstants.New`, `CLIConstants.Update`, etc.
   - Each command has its own `Flag` enum showing which flags are valid for that command

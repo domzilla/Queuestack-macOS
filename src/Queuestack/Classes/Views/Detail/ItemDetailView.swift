@@ -48,26 +48,17 @@ struct ItemDetailView: View {
                 self.windowState.syncBodyWithItem(item)
             }
         }
-        .alert(
-            String(localized: "Unsaved Changes", comment: "Unsaved changes alert title"),
-            isPresented: self.$showingUnsavedAlert
-        ) {
-            Button(String(localized: "Save", comment: "Save button")) {
+        .unsavedChangesAlert(isPresented: self.$showingUnsavedAlert) { action in
+            switch action {
+            case .save:
                 self.windowState.saveBodyChanges()
                 self.commitPendingSelection()
-            }
-            Button(String(localized: "Discard", comment: "Discard button"), role: .destructive) {
+            case .discard:
                 self.windowState.discardBodyChanges()
                 self.commitPendingSelection()
-            }
-            Button(String(localized: "Cancel", comment: "Cancel button"), role: .cancel) {
+            case .cancel:
                 self.revertSelection()
             }
-        } message: {
-            Text(String(
-                localized: "Do you want to save your changes?",
-                comment: "Unsaved changes alert message"
-            ))
         }
     }
 

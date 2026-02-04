@@ -32,55 +32,24 @@ final class Service {
     /// List open items in a project
     func listOpenItems(in project: Project) async throws -> [Item] {
         DZLog("listOpenItems in project: \(project.path.path)")
-        let args = [
-            CLIConstants.List.command,
-            CLIConstants.List.Flag.open,
-            CLIConstants.List.Flag.noInteractive,
-        ]
-        let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
-
-        DZLog("CLI stdout: \(result.stdout)")
-        DZLog("CLI stderr: \(result.stderr)")
-        DZLog("CLI exit: \(result.exitCode)")
-
-        if let error = result.error {
-            DZLog("CLI error: \(error)")
-            throw error
-        }
-
-        // Filter to only actual file paths (must end with .md)
-        let paths = result.lines
-            .filter { $0.hasSuffix(CLIConstants.FileConventions.markdownExtensionWithDot) }
-            .map { project.path.appendingPathComponent($0) }
-        DZLog("Parsed paths: \(paths)")
-        return try self.fileReader.readItems(at: paths, project: project)
+        return try await self.listItems(flag: CLIConstants.List.Flag.open, in: project)
     }
 
     /// List closed items in a project
     func listClosedItems(in project: Project) async throws -> [Item] {
-        let args = [
-            CLIConstants.List.command,
-            CLIConstants.List.Flag.closed,
-            CLIConstants.List.Flag.noInteractive,
-        ]
-        let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
-
-        if let error = result.error {
-            throw error
-        }
-
-        // Filter to only actual file paths (must end with .md)
-        let paths = result.lines
-            .filter { $0.hasSuffix(CLIConstants.FileConventions.markdownExtensionWithDot) }
-            .map { project.path.appendingPathComponent($0) }
-        return try self.fileReader.readItems(at: paths, project: project)
+        try await self.listItems(flag: CLIConstants.List.Flag.closed, in: project)
     }
 
     /// List templates in a project
     func listTemplates(in project: Project) async throws -> [Item] {
+        try await self.listItems(flag: CLIConstants.List.Flag.templates, in: project)
+    }
+
+    /// Shared helper for list operations
+    private func listItems(flag: String, in project: Project) async throws -> [Item] {
         let args = [
             CLIConstants.List.command,
-            CLIConstants.List.Flag.templates,
+            flag,
             CLIConstants.List.Flag.noInteractive,
         ]
         let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
@@ -89,7 +58,6 @@ final class Service {
             throw error
         }
 
-        // Filter to only actual file paths (must end with .md)
         let paths = result.lines
             .filter { $0.hasSuffix(CLIConstants.FileConventions.markdownExtensionWithDot) }
             .map { project.path.appendingPathComponent($0) }
@@ -153,8 +121,7 @@ final class Service {
 
         let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
 
-        // Search returns exit code 1 when no matches
-        if result.exitCode == CLIConstants.Search.ExitCode.noMatches, result.stderr.contains("No matches") {
+        if result.isNoMatchesResult {
             return []
         }
 
@@ -273,41 +240,36 @@ final class Service {
 
     /// Add labels to an item
     func addLabels(_ labels: [String], to item: Item, in project: Project) async throws {
-        var args = [CLIConstants.Update.command, CLIConstants.Update.Flag.id, item.id]
+        var additionalArgs: [String] = []
         for label in labels {
-            args.append(contentsOf: [CLIConstants.Update.Flag.label, label])
+            additionalArgs.append(contentsOf: [CLIConstants.Update.Flag.label, label])
         }
-
-        let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
-
-        if let error = result.error {
-            throw error
-        }
+        try await self.runUpdate(item: item, additionalArgs: additionalArgs, in: project)
     }
 
     /// Remove labels from an item
     func removeLabels(_ labels: [String], from item: Item, in project: Project) async throws {
-        var args = [CLIConstants.Update.command, CLIConstants.Update.Flag.id, item.id]
+        var additionalArgs: [String] = []
         for label in labels {
-            args.append(contentsOf: [CLIConstants.Update.Flag.removeLabel, label])
+            additionalArgs.append(contentsOf: [CLIConstants.Update.Flag.removeLabel, label])
         }
-
-        let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
-
-        if let error = result.error {
-            throw error
-        }
+        try await self.runUpdate(item: item, additionalArgs: additionalArgs, in: project)
     }
 
     /// Update item's category
     func updateCategory(of item: Item, to category: String?, in project: Project) async throws {
-        var args = [CLIConstants.Update.command, CLIConstants.Update.Flag.id, item.id]
-
-        if let category {
-            args.append(contentsOf: [CLIConstants.Update.Flag.category, category])
+        let additionalArgs: [String] = if let category {
+            [CLIConstants.Update.Flag.category, category]
         } else {
-            args.append(CLIConstants.Update.Flag.removeCategory)
+            [CLIConstants.Update.Flag.removeCategory]
         }
+        try await self.runUpdate(item: item, additionalArgs: additionalArgs, in: project)
+    }
+
+    /// Shared helper for update operations
+    private func runUpdate(item: Item, additionalArgs: [String], in project: Project) async throws {
+        var args = [CLIConstants.Update.command, CLIConstants.Update.Flag.id, item.id]
+        args.append(contentsOf: additionalArgs)
 
         let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
 
@@ -360,13 +322,15 @@ final class Service {
         }
     }
 
-    /// Remove an attachment from an item by index (1-based)
+    /// Remove an attachment from an item by index (0-based)
     func removeAttachment(at index: Int, from item: Item, in project: Project) async throws {
+        // CLI uses 1-based indices internally
+        let cliIndex = index + 1
         let args = [
             CLIConstants.Attachments.command,
             CLIConstants.Attachments.Remove.subcommand,
             CLIConstants.Attachments.Remove.Flag.id, item.id,
-            String(index),
+            String(cliIndex),
         ]
         let result = try await self.runner.run(arguments: args, workingDirectory: project.path)
 

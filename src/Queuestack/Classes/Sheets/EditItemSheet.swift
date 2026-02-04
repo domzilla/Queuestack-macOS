@@ -105,7 +105,12 @@ struct EditItemSheet: View {
         } else {
             FlowLayout(spacing: 4) {
                 ForEach(allLabels, id: \.self) { label in
-                    self.labelToggle(label)
+                    LabelToggleButton(
+                        label: label,
+                        isSelected: self.selectedLabels.contains(label)
+                    ) {
+                        self.toggleLabel(label)
+                    }
                 }
             }
         }
@@ -124,55 +129,23 @@ struct EditItemSheet: View {
         }
     }
 
-    @ViewBuilder
-    private func labelToggle(_ label: String) -> some View {
-        let isSelected = self.selectedLabels.contains(label)
-        Button {
-            if isSelected {
-                self.selectedLabels.remove(label)
-            } else {
-                self.selectedLabels.insert(label)
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                Text(label)
-            }
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(isSelected ? Color.accentColor.opacity(0.1) : Color.gray.opacity(0.2))
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+    private func toggleLabel(_ label: String) {
+        if self.selectedLabels.contains(label) {
+            self.selectedLabels.remove(label)
+        } else {
+            self.selectedLabels.insert(label)
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
     private var categoryContent: some View {
-        let sortedCategories = self.allCategoryNames
-
-        // None option
-        self.categoryOption(nil, label: String(localized: "None", comment: "No category option"))
-
-        // All categories
-        ForEach(sortedCategories, id: \.self) { category in
-            self.categoryOption(category, label: category)
-        }
-
-        // New category input
-        HStack {
-            TextField(
-                String(localized: "New category...", comment: "New category placeholder"),
-                text: self.$newCategoryText
-            )
-            .textFieldStyle(.roundedBorder)
-
-            Button(String(localized: "Add", comment: "Add category button")) {
-                self.addNewCategory()
-            }
-            .disabled(self.newCategoryText.trimmingCharacters(in: .whitespaces).isEmpty)
-        }
+        CategoryPicker(
+            categories: self.allCategoryNames,
+            selectedCategory: self.$selectedCategory,
+            newCategoryText: self.$newCategoryText,
+            showAddButton: true,
+            onAddCategory: self.addNewCategory
+        )
     }
 
     private var allCategoryNames: [String] {
@@ -181,25 +154,6 @@ struct EditItemSheet: View {
             categories.insert(current)
         }
         return categories.sorted()
-    }
-
-    @ViewBuilder
-    private func categoryOption(_ category: String?, label: String) -> some View {
-        let isSelected = self.selectedCategory == category
-
-        Button {
-            self.selectedCategory = category
-        } label: {
-            HStack {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                Text(label)
-                    .foregroundStyle(category == nil ? Color.secondary : Color.primary)
-                Spacer()
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     private func addNewLabel() {

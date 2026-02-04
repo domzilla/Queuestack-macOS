@@ -109,7 +109,12 @@ struct NewItemSheet: View {
         } else {
             FlowLayout(spacing: 4) {
                 ForEach(existingLabels) { label in
-                    self.labelToggle(label.name)
+                    LabelToggleButton(
+                        label: label.name,
+                        isSelected: self.selectedLabels.contains(label.name)
+                    ) {
+                        self.toggleLabel(label.name)
+                    }
                 }
             }
         }
@@ -128,96 +133,23 @@ struct NewItemSheet: View {
         }
     }
 
-    @ViewBuilder
-    private func labelToggle(_ label: String) -> some View {
-        let isSelected = self.selectedLabels.contains(label)
-        Button {
-            if isSelected {
-                self.selectedLabels.remove(label)
-            } else {
-                self.selectedLabels.insert(label)
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                Text(label)
-            }
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(isSelected ? Color.accentColor.opacity(0.1) : Color.gray.opacity(0.2))
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+    private func toggleLabel(_ label: String) {
+        if self.selectedLabels.contains(label) {
+            self.selectedLabels.remove(label)
+        } else {
+            self.selectedLabels.insert(label)
         }
-        .buttonStyle(.plain)
     }
 
-    // NOTE: Using custom radio buttons instead of Picker with .radioGroup style
-    // because we need mutual exclusion between radio selection and text field:
-    // - Typing in text field clears radio selection
-    // - Selecting a radio option clears text field
-    // Native Picker doesn't support this interaction pattern.
     @ViewBuilder
     private var categoryContent: some View {
-        let existingCategories = self.windowState.currentProjectState?.categories ?? []
+        let existingCategories = (self.windowState.currentProjectState?.categories ?? []).map(\.name)
 
-        // None option
-        self.noneOption
-
-        // Existing categories as radio buttons
-        ForEach(existingCategories) { category in
-            self.categoryOption(category.name)
-        }
-
-        // New category text field
-        TextField(
-            String(localized: "New category...", comment: "New category placeholder"),
-            text: self.$newCategoryText
+        CategoryPicker(
+            categories: existingCategories,
+            selectedCategory: self.$selectedCategory,
+            newCategoryText: self.$newCategoryText
         )
-        .textFieldStyle(.roundedBorder)
-        .onChange(of: self.newCategoryText) { _, newValue in
-            if !newValue.isEmpty {
-                self.selectedCategory = nil
-            }
-        }
-    }
-
-    private var noneOption: some View {
-        let isSelected = self.selectedCategory == nil && self.newCategoryText.isEmpty
-
-        return Button {
-            self.selectedCategory = nil
-            self.newCategoryText = ""
-        } label: {
-            HStack {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                Text(String(localized: "None", comment: "No category option"))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    private func categoryOption(_ category: String) -> some View {
-        let isSelected = self.selectedCategory == category
-
-        Button {
-            self.selectedCategory = category
-            self.newCategoryText = ""
-        } label: {
-            HStack {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                Text(category)
-                Spacer()
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     private func addNewLabel() {

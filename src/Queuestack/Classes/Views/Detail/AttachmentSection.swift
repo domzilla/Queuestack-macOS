@@ -167,9 +167,7 @@ struct AttachmentSection: View {
         self.isProcessing = true
         Task {
             do {
-                // CLI uses 1-based indices
-                let cliIndices = indices.map { $0 + 1 }
-                try await self.windowState.currentProjectState?.removeAttachments(at: cliIndices, from: self.item)
+                try await self.windowState.currentProjectState?.removeAttachments(at: Array(indices), from: self.item)
             } catch {
                 DZErrorLog(error)
             }
