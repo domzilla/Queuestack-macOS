@@ -45,6 +45,7 @@ private struct WindowContent: View {
     var body: some View {
         NavigationSplitView(columnVisibility: self.$columnVisibility) {
             ProjectSidebar()
+                .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 350)
         } content: {
             ItemListView()
                 .navigationSplitViewColumnWidth(min: 280, ideal: 350, max: 500)

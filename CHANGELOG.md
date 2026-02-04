@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Global search scope filter (Open/Closed/Template) with segmented control below search field
 
 ### Fixed
+- Default window size too small on first launch; set to 1100x700 with proper sidebar column width
 - Quick Look panel now resizes properly when navigating between attachments of different sizes
 - Global search now triggers on typing with 300ms debounce instead of requiring Enter key
 - Search results persist in sidebar while query text exists (clearing field returns to project outline)

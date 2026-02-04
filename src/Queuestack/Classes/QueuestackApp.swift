@@ -19,6 +19,7 @@ struct QueuestackApp: App {
             ContentView()
                 .environment(self.services)
         }
+        .defaultSize(width: 1100, height: 700)
         .commands {
             // Replace default "New Window" (⌘N) with ⇧⌘N
             CommandGroup(replacing: .newItem) {
