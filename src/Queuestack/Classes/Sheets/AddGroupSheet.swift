@@ -55,7 +55,7 @@ struct AddGroupSheet: View {
         let name = self.groupName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
 
-        self.windowState.services.settings.addGroup(name: name, toGroupWithID: self.targetGroupID)
+        self.windowState.services.projects.addGroup(name: name, toGroupWithID: self.targetGroupID)
         self.dismiss()
     }
 }

@@ -1,5 +1,5 @@
 //
-//  SettingsManager.swift
+//  ProjectManager.swift
 //  Queuestack
 //
 //  Created by Dominic Rodemer on 31/01/2026.
@@ -9,17 +9,11 @@
 import Foundation
 import SwiftUI
 
-/// Persists app settings and sidebar tree structure
+/// Persists sidebar tree structure (projects and groups)
 @Observable
 @MainActor
-final class SettingsManager {
-    // MARK: - Stored Settings
-
-    var cliBinaryPath: String {
-        didSet {
-            UserDefaults.standard.set(self.cliBinaryPath, forKey: Keys.cliBinaryPath)
-        }
-    }
+final class ProjectManager {
+    // MARK: - Stored Properties
 
     var sidebarTree: [SidebarNode] {
         didSet {
@@ -30,7 +24,6 @@ final class SettingsManager {
     // MARK: - Initialization
 
     init() {
-        self.cliBinaryPath = UserDefaults.standard.string(forKey: Keys.cliBinaryPath) ?? CLIConstants.defaultBinaryPath
         self.sidebarTree = []
         self.loadSidebarTree()
     }
@@ -222,7 +215,6 @@ final class SettingsManager {
     // MARK: - Keys
 
     private enum Keys {
-        static let cliBinaryPath = "cliBinaryPath"
         static let sidebarTree = "sidebarTree"
     }
 }

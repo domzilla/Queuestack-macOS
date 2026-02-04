@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Refactored
+- Rename `SettingsManager` to `ProjectManager` and remove unused `cliBinaryPath` setting (use `CLIConstants.defaultBinaryPath` directly)
 - Extract `listItems(flag:in:)` helper in `Service` to eliminate duplication across list methods
 - Extract `scanItems(in:project:excluding:)` helper in `FileReader` to eliminate duplication across scan methods
 - Extract `runUpdate(item:additionalArgs:in:)` helper in `Service` for update operations

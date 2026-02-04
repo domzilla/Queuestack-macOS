@@ -89,12 +89,12 @@ final class WindowState {
 
     var selectedProject: Project? {
         guard let id = self.selectedProjectID else { return nil }
-        return self.services.settings.sidebarTree.findProject(id: id)
+        return self.services.projects.sidebarTree.findProject(id: id)
     }
 
     var currentProjectState: ProjectState? {
         guard let project = self.selectedProject else { return nil }
-        return self.services.projectManager.state(for: project)
+        return self.services.projectState.state(for: project)
     }
 
     var selectedItem: Item? {
@@ -200,10 +200,10 @@ final class WindowState {
         // Start watching new project
         if let project = self.selectedProject {
             DZLog("Selected project: \(project.name) at \(project.path.path)")
-            self.services.projectManager.startWatching(project: project)
+            self.services.projectState.startWatching(project: project)
 
             // Always reload items to ensure fresh data (external tools may have modified files)
-            let state = self.services.projectManager.state(for: project)
+            let state = self.services.projectState.state(for: project)
             if !state.isLoading {
                 Task {
                     await state.loadItems()
@@ -211,7 +211,7 @@ final class WindowState {
             }
         } else {
             DZLog("No project selected")
-            self.services.projectManager.stopWatching()
+            self.services.projectState.stopWatching()
         }
     }
 

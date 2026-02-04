@@ -105,7 +105,7 @@ struct ProjectSidebar: View {
         switch result {
         case let .success(url):
             do {
-                let project = try self.windowState.services.settings.validateAndAddProject(
+                let project = try self.windowState.services.projects.validateAndAddProject(
                     from: url,
                     toGroupWithID: self.targetGroupID
                 )
@@ -131,7 +131,7 @@ struct ProjectSidebar: View {
         } else {
             @Bindable var windowState = self.windowState
             SidebarOutlineView(
-                settings: self.windowState.services.settings,
+                projects: self.windowState.services.projects,
                 selectedProjectID: $windowState.selectedProjectID,
                 onAddProject: { groupID in
                     self.targetGroupID = groupID

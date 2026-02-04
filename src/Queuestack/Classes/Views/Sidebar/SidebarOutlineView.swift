@@ -16,7 +16,7 @@ struct SidebarOutlineView: NSViewRepresentable {
     private static let columnIdentifier = NSUserInterfaceItemIdentifier("main")
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("SidebarCell")
 
-    @Bindable var settings: SettingsManager
+    @Bindable var projects: ProjectManager
     @Binding var selectedProjectID: UUID?
     let onAddProject: (UUID?) -> Void
     let onAddGroup: (UUID?) -> Void
@@ -90,7 +90,7 @@ struct SidebarOutlineView: NSViewRepresentable {
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let outlineView = scrollView.documentView as? NSOutlineView else { return }
 
-        context.coordinator.settings = self.settings
+        context.coordinator.projects = self.projects
         context.coordinator.selectedProjectID = self.selectedProjectID
         context.coordinator.onAddProject = self.onAddProject
         context.coordinator.onAddGroup = self.onAddGroup
@@ -107,7 +107,7 @@ struct SidebarOutlineView: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
-            settings: self.settings,
+            projects: self.projects,
             selectedProjectID: self.selectedProjectID,
             onSelectionChanged: { id in self.selectedProjectID = id },
             onAddProject: self.onAddProject,
@@ -123,7 +123,7 @@ extension SidebarOutlineView {
     final class Coordinator: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate, NSMenuDelegate,
         NSTextFieldDelegate
     {
-        var settings: SettingsManager
+        var projects: ProjectManager
         var selectedProjectID: UUID?
         var onSelectionChanged: (UUID?) -> Void
         var onAddProject: (UUID?) -> Void
@@ -135,14 +135,14 @@ extension SidebarOutlineView {
         private var clickedNode: SidebarNode?
 
         init(
-            settings: SettingsManager,
+            projects: ProjectManager,
             selectedProjectID: UUID?,
             onSelectionChanged: @escaping (UUID?) -> Void,
             onAddProject: @escaping (UUID?) -> Void,
             onAddGroup: @escaping (UUID?) -> Void,
             onProjectAddError: @escaping (Error) -> Void
         ) {
-            self.settings = settings
+            self.projects = projects
             self.selectedProjectID = selectedProjectID
             self.onSelectionChanged = onSelectionChanged
             self.onAddProject = onAddProject
@@ -154,7 +154,7 @@ extension SidebarOutlineView {
 
         func outlineView(_: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
             if item == nil {
-                return self.settings.sidebarTree.count
+                return self.projects.sidebarTree.count
             }
             if let node = item as? SidebarNode, case let .group(group) = node {
                 return group.children.count
@@ -164,7 +164,7 @@ extension SidebarOutlineView {
 
         func outlineView(_: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
             if item == nil {
-                return self.settings.sidebarTree[index]
+                return self.projects.sidebarTree[index]
             }
             if let node = item as? SidebarNode, case let .group(group) = node {
                 return group.children[index]
@@ -259,7 +259,7 @@ extension SidebarOutlineView {
                 let node = notification.userInfo?["NSObject"] as? SidebarNode,
                 let group = node.group else { return }
             Task { @MainActor in
-                self.settings.setGroupExpanded(true, forGroupWithID: group.id)
+                self.projects.setGroupExpanded(true, forGroupWithID: group.id)
             }
         }
 
@@ -268,7 +268,7 @@ extension SidebarOutlineView {
                 let node = notification.userInfo?["NSObject"] as? SidebarNode,
                 let group = node.group else { return }
             Task { @MainActor in
-                self.settings.setGroupExpanded(false, forGroupWithID: group.id)
+                self.projects.setGroupExpanded(false, forGroupWithID: group.id)
             }
         }
 
@@ -306,7 +306,7 @@ extension SidebarOutlineView {
 
                 // Can't drop group into its own descendants
                 if let targetNode = item as? SidebarNode {
-                    if self.settings.sidebarTree.isAncestor(draggedID, of: targetNode.id) {
+                    if self.projects.sidebarTree.isAncestor(draggedID, of: targetNode.id) {
                         return []
                     }
                 }
@@ -347,7 +347,7 @@ extension SidebarOutlineView {
                 let draggedID = UUID(uuidString: uuidString)
             {
                 Task { @MainActor in
-                    self.settings.moveNode(id: draggedID, toGroupWithID: targetGroupID, at: insertIndex)
+                    self.projects.moveNode(id: draggedID, toGroupWithID: targetGroupID, at: insertIndex)
                 }
                 return true
             }
@@ -362,7 +362,7 @@ extension SidebarOutlineView {
 
                     Task { @MainActor in
                         do {
-                            try self.settings.validateAndAddProject(from: url, toGroupWithID: targetGroupID)
+                            try self.projects.validateAndAddProject(from: url, toGroupWithID: targetGroupID)
                         } catch {
                             self.onProjectAddError(error)
                         }
@@ -424,7 +424,7 @@ extension SidebarOutlineView {
         func removeItem(_: Any?) {
             guard let node = self.clickedNode else { return }
             Task { @MainActor in
-                self.settings.removeNode(id: node.id)
+                self.projects.removeNode(id: node.id)
                 if node.project?.id == self.selectedProjectID {
                     self.onSelectionChanged(nil)
                 }
@@ -441,7 +441,7 @@ extension SidebarOutlineView {
 
             // Only allow renaming groups
             guard
-                let node = self.settings.sidebarTree.findNode(id: nodeID),
+                let node = self.projects.sidebarTree.findNode(id: nodeID),
                 node.isGroup else { return }
 
             let newName = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -452,14 +452,14 @@ extension SidebarOutlineView {
                 return
             }
 
-            self.settings.renameNode(id: nodeID, to: newName)
+            self.projects.renameNode(id: nodeID, to: newName)
         }
 
         // MARK: - Helpers
 
         func restoreExpansionState() {
             guard let outlineView else { return }
-            self.restoreExpansion(for: self.settings.sidebarTree, in: outlineView)
+            self.restoreExpansion(for: self.projects.sidebarTree, in: outlineView)
         }
 
         private func restoreExpansion(for nodes: [SidebarNode], in outlineView: NSOutlineView) {

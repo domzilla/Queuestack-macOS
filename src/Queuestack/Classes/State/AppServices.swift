@@ -12,17 +12,17 @@ import Foundation
 @Observable
 @MainActor
 final class AppServices {
-    let settings: SettingsManager
+    let projects: ProjectManager
     let service: Service
-    let projectManager: ProjectStateManager
+    let projectState: ProjectStateManager
 
     init() {
-        self.settings = SettingsManager()
-        self.service = Service(binaryPath: self.settings.cliBinaryPath)
-        self.projectManager = ProjectStateManager(service: self.service)
+        self.projects = ProjectManager()
+        self.service = Service(binaryPath: CLIConstants.defaultBinaryPath)
+        self.projectState = ProjectStateManager(service: self.service)
     }
 
     var allProjects: [Project] {
-        self.settings.sidebarTree.allProjects
+        self.projects.sidebarTree.allProjects
     }
 }
