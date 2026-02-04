@@ -9,6 +9,25 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Project Addition Error
+
+enum ProjectAdditionError: LocalizedError {
+    case notQueuestackProject(name: String)
+    case alreadyAdded(name: String)
+
+    var errorDescription: String? {
+        switch self {
+        case let .notQueuestackProject(name):
+            String(
+                localized: "Not a queuestack project: \(name)",
+                comment: "Error when folder is not a queuestack project"
+            )
+        case let .alreadyAdded(name):
+            String(localized: "Project already added: \(name)", comment: "Error when project is already in sidebar")
+        }
+    }
+}
+
 /// Persists app settings and sidebar tree structure
 @Observable
 @MainActor
@@ -169,6 +188,31 @@ final class SettingsManager {
     /// Check if a project with the given path already exists in the tree
     func containsProject(at path: URL) -> Bool {
         self.sidebarTree.containsProject(at: path)
+    }
+
+    /// Validates and adds a project from a URL, checking for duplicates and valid queuestack config
+    /// - Parameters:
+    ///   - url: The folder URL to add as a project
+    ///   - groupID: Optional parent group ID to add the project into
+    /// - Returns: The created Project
+    /// - Throws: `ProjectAdditionError` if validation fails
+    @discardableResult
+    func validateAndAddProject(from url: URL, toGroupWithID groupID: UUID?) throws -> Project {
+        // Check for .queuestack file
+        let configPath = url.appendingPathComponent(".queuestack")
+        guard FileManager.default.fileExists(atPath: configPath.path) else {
+            throw ProjectAdditionError.notQueuestackProject(name: url.lastPathComponent)
+        }
+
+        // Check for duplicates
+        guard !self.containsProject(at: url) else {
+            throw ProjectAdditionError.alreadyAdded(name: url.lastPathComponent)
+        }
+
+        // Create and add project
+        let project = try Project.from(url: url)
+        self.addProject(project, toGroupWithID: groupID)
+        return project
     }
 
     private func updateNode(id: UUID, transform: (SidebarNode) -> SidebarNode) {

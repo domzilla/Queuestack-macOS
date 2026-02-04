@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- URL format validation for attachment URLs (accepts only http/https schemes)
+- Duplicate project detection when adding projects via file picker
+- Unified project validation with error feedback for both file picker and drag & drop
 - Quick Look preview for attachments: press Space bar to toggle; arrow keys navigate while panel is open
 - Attachment support in item detail view with URL and file attachment management
 - Global search scope filter (Open/Closed/Template) with segmented control below search field

@@ -17,6 +17,8 @@ struct AttachmentSection: View {
     @State private var showingURLAlert = false
     @State private var urlText = ""
     @State private var isProcessing = false
+    @State private var showingAttachmentError = false
+    @State private var attachmentErrorMessage = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -54,6 +56,14 @@ struct AttachmentSection: View {
             }
         } message: {
             Text(String(localized: "Enter a URL to attach", comment: "Add URL alert message"))
+        }
+        .alert(
+            String(localized: "Cannot Add Attachment", comment: "Attachment error alert title"),
+            isPresented: self.$showingAttachmentError
+        ) {
+            Button(String(localized: "OK", comment: "OK button"), role: .cancel) {}
+        } message: {
+            Text(self.attachmentErrorMessage)
         }
     }
 
@@ -191,15 +201,29 @@ struct AttachmentSection: View {
     }
 
     private func addURL() {
-        let url = self.urlText.trimmingCharacters(in: .whitespaces)
+        let urlString = self.urlText.trimmingCharacters(in: .whitespaces)
         self.urlText = ""
 
-        guard !url.isEmpty else { return }
+        guard !urlString.isEmpty else { return }
+
+        // Validate URL format
+        guard
+            let url = URL(string: urlString),
+            let scheme = url.scheme?.lowercased(),
+            ["http", "https"].contains(scheme) else
+        {
+            self.attachmentErrorMessage = String(
+                localized: "Invalid URL format",
+                comment: "Error when URL format is invalid"
+            )
+            self.showingAttachmentError = true
+            return
+        }
 
         self.isProcessing = true
         Task {
             do {
-                try await self.windowState.currentProjectState?.addAttachment(url, to: self.item)
+                try await self.windowState.currentProjectState?.addAttachment(urlString, to: self.item)
             } catch {
                 DZErrorLog(error)
             }

@@ -17,6 +17,7 @@ struct SidebarOutlineView: NSViewRepresentable {
     @Binding var selectedProjectID: UUID?
     let onAddProject: (UUID?) -> Void
     let onAddGroup: (UUID?) -> Void
+    let onProjectAddError: (Error) -> Void
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -90,6 +91,7 @@ struct SidebarOutlineView: NSViewRepresentable {
         context.coordinator.selectedProjectID = self.selectedProjectID
         context.coordinator.onAddProject = self.onAddProject
         context.coordinator.onAddGroup = self.onAddGroup
+        context.coordinator.onProjectAddError = self.onProjectAddError
 
         // Reload data and restore expansion state
         outlineView.reloadData()
@@ -103,7 +105,8 @@ struct SidebarOutlineView: NSViewRepresentable {
             selectedProjectID: self.selectedProjectID,
             onSelectionChanged: { id in self.selectedProjectID = id },
             onAddProject: self.onAddProject,
-            onAddGroup: self.onAddGroup
+            onAddGroup: self.onAddGroup,
+            onProjectAddError: self.onProjectAddError
         )
     }
 }
@@ -123,6 +126,7 @@ extension SidebarOutlineView {
         var onSelectionChanged: (UUID?) -> Void
         var onAddProject: (UUID?) -> Void
         var onAddGroup: (UUID?) -> Void
+        var onProjectAddError: (Error) -> Void
         weak var outlineView: NSOutlineView?
 
         private var isUpdatingSelection = false
@@ -133,13 +137,15 @@ extension SidebarOutlineView {
             selectedProjectID: UUID?,
             onSelectionChanged: @escaping (UUID?) -> Void,
             onAddProject: @escaping (UUID?) -> Void,
-            onAddGroup: @escaping (UUID?) -> Void
+            onAddGroup: @escaping (UUID?) -> Void,
+            onProjectAddError: @escaping (Error) -> Void
         ) {
             self.settings = settings
             self.selectedProjectID = selectedProjectID
             self.onSelectionChanged = onSelectionChanged
             self.onAddProject = onAddProject
             self.onAddGroup = onAddGroup
+            self.onProjectAddError = onProjectAddError
         }
 
         // MARK: - Data Source
@@ -343,9 +349,11 @@ extension SidebarOutlineView {
                         let url = URL(string: urlString) else { continue }
 
                     Task { @MainActor in
-                        if self.settings.containsProject(at: url) { return }
-                        guard let project = try? Project.from(url: url) else { return }
-                        self.settings.addProject(project, toGroupWithID: targetGroupID)
+                        do {
+                            try self.settings.validateAndAddProject(from: url, toGroupWithID: targetGroupID)
+                        } catch {
+                            self.onProjectAddError(error)
+                        }
                     }
                     addedAny = true
                 }

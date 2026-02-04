@@ -8,15 +8,18 @@
 
 import DZFoundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ProjectSidebar: View {
     @Environment(WindowState.self) private var windowState
 
-    @State private var showingAddProjectSheet = false
+    @State private var showingAddProjectPicker = false
     @State private var showingAddGroupSheet = false
     @State private var targetGroupID: UUID?
     @State private var showingUnsavedAlert = false
     @State private var pendingProjectID: UUID?
+    @State private var showingProjectError = false
+    @State private var projectErrorMessage = ""
 
     private var showSearchResults: Bool {
         !self.windowState.globalSearchQuery.trimmingCharacters(in: .whitespaces).isEmpty
@@ -27,11 +30,22 @@ struct ProjectSidebar: View {
 
         self.sidebarContent
             .navigationTitle(String(localized: "Projects", comment: "Sidebar title"))
-            .sheet(isPresented: self.$showingAddProjectSheet) {
-                AddProjectSheet(targetGroupID: self.targetGroupID)
+            .fileImporter(
+                isPresented: self.$showingAddProjectPicker,
+                allowedContentTypes: [.folder]
+            ) { result in
+                self.handleAddProjectResult(result)
             }
             .sheet(isPresented: self.$showingAddGroupSheet) {
                 AddGroupSheet(targetGroupID: self.targetGroupID)
+            }
+            .alert(
+                String(localized: "Cannot Add Project", comment: "Add project error alert title"),
+                isPresented: self.$showingProjectError
+            ) {
+                Button(String(localized: "OK", comment: "OK button"), role: .cancel) {}
+            } message: {
+                Text(self.projectErrorMessage)
             }
             .onChange(of: self.windowState.selectedProjectID) { oldValue, newValue in
                 DZLog("ProjectSidebar onChange: \(String(describing: oldValue)) -> \(String(describing: newValue))")
@@ -96,6 +110,29 @@ struct ProjectSidebar: View {
         self.pendingProjectID = nil
     }
 
+    private func handleAddProjectResult(_ result: Result<URL, Error>) {
+        switch result {
+        case let .success(url):
+            do {
+                let project = try self.windowState.services.settings.validateAndAddProject(
+                    from: url,
+                    toGroupWithID: self.targetGroupID
+                )
+                self.windowState.selectProject(project)
+            } catch {
+                self.projectErrorMessage = error.localizedDescription
+                self.showingProjectError = true
+            }
+
+        case let .failure(error):
+            // User cancelled or error - ignore cancellation
+            if (error as NSError).code != NSUserCancelledError {
+                self.projectErrorMessage = error.localizedDescription
+                self.showingProjectError = true
+            }
+        }
+    }
+
     @ViewBuilder
     private var sidebarContent: some View {
         if self.showSearchResults {
@@ -107,11 +144,15 @@ struct ProjectSidebar: View {
                 selectedProjectID: $windowState.selectedProjectID,
                 onAddProject: { groupID in
                     self.targetGroupID = groupID
-                    self.showingAddProjectSheet = true
+                    self.showingAddProjectPicker = true
                 },
                 onAddGroup: { groupID in
                     self.targetGroupID = groupID
                     self.showingAddGroupSheet = true
+                },
+                onProjectAddError: { error in
+                    self.projectErrorMessage = error.localizedDescription
+                    self.showingProjectError = true
                 }
             )
             .safeAreaInset(edge: .bottom) {
@@ -125,7 +166,7 @@ struct ProjectSidebar: View {
             Menu {
                 Button {
                     self.targetGroupID = nil
-                    self.showingAddProjectSheet = true
+                    self.showingAddProjectPicker = true
                 } label: {
                     SwiftUI.Label(
                         String(localized: "Add Project...", comment: "Menu item to add project"),
