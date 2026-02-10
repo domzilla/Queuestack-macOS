@@ -7,11 +7,13 @@
 //
 
 import AppKit
+import Sparkle
 import SwiftUI
 
 @main
 struct QueuestackApp: App {
     @State private var services = AppServices()
+    @State private var updateController = UpdateController()
     @FocusedValue(\.windowState) private var focusedWindowState
     @Environment(\.openWindow) private var openWindow
 
@@ -27,6 +29,13 @@ struct QueuestackApp: App {
         }
         .defaultSize(width: 1100, height: 700)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button(String(localized: "Check for Updates…", comment: "Menu item to check for app updates")) {
+                    self.updateController.checkForUpdates()
+                }
+                .disabled(!self.updateController.canCheckForUpdates)
+            }
+
             // Replace default "New Window" (⌘N) with ⇧⌘N
             CommandGroup(replacing: .newItem) {
                 Button(String(localized: "New Item...", comment: "Menu item to create item")) {

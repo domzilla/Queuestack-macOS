@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extract `NSPasteboard.PasteboardType` extension to `Constants/PasteboardTypes.swift`
 
 ### Added
+- "Check for Updates…" menu item in app menu via Sparkle integration
 - URL format validation for attachment URLs (accepts only http/https schemes)
 - Duplicate project detection when adding projects via file picker
 - Unified project validation with error feedback for both file picker and drag & drop
