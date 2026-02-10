@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		F26349F72F2D147F00C56D92 /* DZFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = F26349F62F2D147F00C56D92 /* DZFoundation */; };
 		F26349F82F2D148900C56D92 /* DZFoundation in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F26349F62F2D147F00C56D92 /* DZFoundation */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F2634F2B2F3B251500C56D92 /* DZFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = F2634F2A2F3B251500C56D92 /* DZFoundation */; };
+		F2634F2E2F3B252500C56D92 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F2634F2D2F3B252500C56D92 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,9 +31,22 @@
 		F26349822F2D0A4C00C56D92 /* Queuestack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Queuestack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F2634F312F3B39FC00C56D92 /* Exceptions for "Queuestack" folder in "Queuestack" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/Info.plist,
+			);
+			target = F26349812F2D0A4C00C56D92 /* Queuestack */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F26349842F2D0A4C00C56D92 /* Queuestack */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F2634F312F3B39FC00C56D92 /* Exceptions for "Queuestack" folder in "Queuestack" target */,
+			);
 			path = Queuestack;
 			sourceTree = "<group>";
 		};
@@ -42,7 +57,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2634F2E2F3B252500C56D92 /* Sparkle in Frameworks */,
 				F26349F72F2D147F00C56D92 /* DZFoundation in Frameworks */,
+				F2634F2B2F3B251500C56D92 /* DZFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +104,8 @@
 			name = Queuestack;
 			packageProductDependencies = (
 				F26349F62F2D147F00C56D92 /* DZFoundation */,
+				F2634F2A2F3B251500C56D92 /* DZFoundation */,
+				F2634F2D2F3B252500C56D92 /* Sparkle */,
 			);
 			productName = Queuestack;
 			productReference = F26349822F2D0A4C00C56D92 /* Queuestack.app */;
@@ -117,7 +136,8 @@
 			mainGroup = F26349792F2D0A4C00C56D92;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F26349F52F2D147F00C56D92 /* XCLocalSwiftPackageReference "../../../../Libraries/DZFoundation" */,
+				F2634F292F3B251500C56D92 /* XCRemoteSwiftPackageReference "DZFoundation" */,
+				F2634F2C2F3B252500C56D92 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F26349832F2D0A4C00C56D92 /* Products */;
@@ -283,6 +303,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Queuestack/Resources/info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -314,6 +335,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Queuestack/Resources/info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -355,17 +377,39 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		F26349F52F2D147F00C56D92 /* XCLocalSwiftPackageReference "../../../../Libraries/DZFoundation" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../../Libraries/DZFoundation;
+/* Begin XCRemoteSwiftPackageReference section */
+		F2634F292F3B251500C56D92 /* XCRemoteSwiftPackageReference "DZFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/domzilla/DZFoundation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+		F2634F2C2F3B252500C56D92 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		F26349F62F2D147F00C56D92 /* DZFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DZFoundation;
+		};
+		F2634F2A2F3B251500C56D92 /* DZFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2634F292F3B251500C56D92 /* XCRemoteSwiftPackageReference "DZFoundation" */;
+			productName = DZFoundation;
+		};
+		F2634F2D2F3B252500C56D92 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2634F2C2F3B252500C56D92 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
