@@ -1,0 +1,38 @@
+---
+version_source: plist
+tag_prefix: v
+release_branch: master
+git_remotes:
+- github.com
+- origin
+publishers:
+- sparkle
+post_publish_template: |
+  array(
+      APP_NAME => "Queuestack",
+      APP_TITLE => _("Queuestack"),
+      APP_DESCRIPTION => _("A minimal, scriptable task and issue tracker optimized for agent-driven project management."),
+      APP_VERSION => "{{version}}",
+      APP_SIZE => "{{size}}",
+      APP_ICON => "/images/logo-2x.png",
+      APP_URL => "{{url}}",
+      DOWNLOAD_URL => "/download",
+      APP_LINK_TARGET => "_blank",
+      APP_OS => $__OS_macOS,
+      APP_HIDDEN => false
+   )
+post_publish_commands:
+- nova --wait ~/Sites/Online/queuestack._app/www/website/config/apps.config.php
+- git -C ~/Sites/Online/queuestack._app add www/website/config/apps.config.php && git -C ~/Sites/Online/queuestack._app commit -m "Release {{version}}"
+- git -C ~/Sites/Online/queuestack._app push origin
+- transmit www.queuestack.app
+- gh release create v{{version}} sparkle/release/{{zip_name}} --title "{{app_name}} {{version}}" --notes-file sparkle/release/{{app_name}}_{{version}}.html -R domzilla/Queuestack-macOS
+- echo "Release {{version}} complete"
+sparkle:
+  app_name: Queuestack
+  s3_bucket: dr-queuestack-mac
+  aws_region: eu-central-1
+  release_dir: sparkle/release
+  generate_appcast: ~/bin/sparkle/generate_appcast
+  signing_account: ed25519
+  editor: nova --wait
