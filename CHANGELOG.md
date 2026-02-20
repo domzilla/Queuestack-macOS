@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Global search scope filter (Open/Closed/Template) with segmented control below search field
 
 ### Fixed
+- Empty categories not shown in New Item sheet; categories are now fetched from CLI (`qs list --categories`) and merged with item-derived counts so directory-only categories appear
+- Empty labels not shown in New Item sheet; labels are now fetched from CLI (`qs list --labels`) and merged with item-derived counts so unused labels appear
 - Item rename showing spurious file-not-found error; CLI output parsing now correctly extracts path from "Updated item:" message
 - Default window size too small on first launch; set to 1100x700 with proper sidebar column width
 - Quick Look panel now resizes properly when navigating between attachments of different sizes

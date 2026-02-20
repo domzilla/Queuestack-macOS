@@ -26,6 +26,12 @@ final class ProjectState {
 
     private let service: Service
 
+    /// Labels fetched from the CLI (includes labels with no active items).
+    private var cliLabels: [Label] = []
+
+    /// Categories fetched from the CLI (includes empty categories from directory structure).
+    private var cliCategories: [Category] = []
+
     /// Per-item serial queues for refresh operations.
     /// Ensures same item isn't refreshed concurrently, but different items can refresh in parallel.
     private var itemRefreshQueues: [String: AsyncStream<Void>.Continuation] = [:]
@@ -92,11 +98,18 @@ final class ProjectState {
         self.error = nil
 
         do {
-            let (open, closed, templates) = try await self.service.loadAllItems(in: self.project)
+            async let itemsResult = self.service.loadAllItems(in: self.project)
+            async let labelsResult = self.service.listLabels(in: self.project)
+            async let categoriesResult = self.service.listCategories(in: self.project)
+
+            let (open, closed, templates) = try await itemsResult
             DZLog("Loaded: \(open.count) open, \(closed.count) closed, \(templates.count) templates")
             self.openItems = open
             self.closedItems = closed
             self.templateItems = templates
+
+            self.cliLabels = await (try? labelsResult) ?? []
+            self.cliCategories = await (try? categoriesResult) ?? []
 
             // Record modification dates to skip stale FSEvents refreshes
             self.recordModificationDates(for: open + closed + templates)
@@ -200,8 +213,11 @@ final class ProjectState {
     }
 
     private func computeLabelsAndCategories() {
-        // Compute labels
+        // Compute labels: merge CLI labels (includes unused labels) with item-derived counts
         var labelCounts: [String: Int] = [:]
+        for label in self.cliLabels {
+            labelCounts[label.name] = 0
+        }
         for item in self.allItems {
             for label in item.labels {
                 labelCounts[label, default: 0] += 1
@@ -210,8 +226,11 @@ final class ProjectState {
         self.labels = labelCounts.map { Label(name: $0.key, itemCount: $0.value) }
             .sorted { $0.name < $1.name }
 
-        // Compute categories
+        // Compute categories: merge CLI categories (includes empty dirs) with item-derived counts
         var categoryCounts: [String: Int] = [:]
+        for category in self.cliCategories {
+            categoryCounts[category.name] = 0
+        }
         for item in self.allItems {
             if let category = item.category {
                 categoryCounts[category, default: 0] += 1

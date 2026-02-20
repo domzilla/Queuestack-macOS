@@ -77,7 +77,9 @@ final class Service {
             throw error
         }
 
-        return result.lines.map { Label(name: $0) }
+        return result.lines
+            .filter { !$0.isEmpty }
+            .map { Label(name: $0) }
     }
 
     /// List all unique categories in a project
@@ -93,7 +95,9 @@ final class Service {
             throw error
         }
 
-        return result.lines.map { Category(name: $0) }
+        return result.lines
+            .filter { !$0.isEmpty }
+            .map { Category(name: $0) }
     }
 
     // MARK: - Search
