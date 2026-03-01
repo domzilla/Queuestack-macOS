@@ -79,7 +79,6 @@ struct MarkdownTextView: NSViewRepresentable {
             context.coordinator.isUpdating = true
             textView.string = self.text
             if let textStorage = textView.textStorage {
-                let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 let fullRange = NSRange(location: 0, length: textStorage.length)
                 textStorage.addAttribute(
                     .font,
@@ -87,14 +86,12 @@ struct MarkdownTextView: NSViewRepresentable {
                     range: fullRange
                 )
                 textStorage.addAttribute(.foregroundColor, value: NSColor.labelColor, range: fullRange)
-                if isDarkMode {
-                    textStorage.delegate?.textStorage?(
-                        textStorage,
-                        didProcessEditing: .editedCharacters,
-                        range: fullRange,
-                        changeInLength: 0
-                    )
-                }
+                textStorage.delegate?.textStorage?(
+                    textStorage,
+                    didProcessEditing: .editedCharacters,
+                    range: fullRange,
+                    changeInLength: 0
+                )
             }
             context.coordinator.isUpdating = false
         }

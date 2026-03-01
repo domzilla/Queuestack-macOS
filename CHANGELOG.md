@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Markdown syntax highlighting in the item body editor (dark mode only, colors matched to Nova editor)
+- Markdown syntax highlighting in the item body editor
+- Blockquote (`>`) syntax highlighting with italic font in the markdown editor
 
 ### Changed
+- Extract syntax highlighting colors from `MarkdownHighlighter` into a dedicated `NSColor.SyntaxHighlighting` extension
+- Switch syntax highlighting from custom hex colors to dynamic `NSColor.system*` colors; highlighting now works in both light and dark mode
 - Replace custom `KeyCode` enum with Apple's `kVK_*` constants from `Carbon.HIToolbox`
 
 ### Fixed
