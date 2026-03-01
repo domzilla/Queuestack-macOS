@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Markdown syntax highlighting in the item body editor (dark mode only, colors matched to Nova editor)
 
+### Fixed
+- Fix scroll flicker when typing space in the body editor caused by deferred text layout recalculation after markdown highlighting font-attribute changes; force synchronous layout via `ensureLayout` before propagating text to SwiftUI
+- Batch markdown highlighter attribute changes in `beginEditing`/`endEditing` to reduce redundant layout passes
+
 ## [1.0.1] - 2026-02-20
 
 ### Fixed

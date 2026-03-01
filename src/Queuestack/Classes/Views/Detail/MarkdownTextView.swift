@@ -116,6 +116,20 @@ struct MarkdownTextView: NSViewRepresentable {
             guard !self.isUpdating else { return }
             guard let textView = notification.object as? NSTextView else { return }
 
+            // Force text layout to complete synchronously.
+            // Without this, the layout manager defers recalculation after
+            // font-attribute changes from the highlighter, causing the
+            // NSTextView frame to jump asynchronously — visible as
+            // scroll flicker on word-boundary characters (space).
+            if let textLayoutManager = textView.textLayoutManager {
+                textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
+            } else if
+                let layoutManager = textView.layoutManager,
+                let textContainer = textView.textContainer
+            {
+                layoutManager.ensureLayout(for: textContainer)
+            }
+
             self.isUpdating = true
             self.parent.text = textView.string
             self.isUpdating = false

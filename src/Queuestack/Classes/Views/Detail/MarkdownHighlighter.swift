@@ -119,12 +119,20 @@ final class MarkdownHighlighter: NSObject, NSTextStorageDelegate {
         let fullRange = NSRange(location: 0, length: textStorage.length)
         let text = textStorage.string
 
+        // Batch all attribute changes so the layout manager recalculates only once
+        // (without this, each addAttribute triggers a separate layout pass,
+        //  and the intermediate "all-baseFont" layout causes visible flicker on word breaks)
+        textStorage.beginEditing()
+
         // Reset to defaults
         textStorage.addAttribute(.font, value: self.baseFont, range: fullRange)
         textStorage.addAttribute(.foregroundColor, value: NSColor.labelColor, range: fullRange)
         textStorage.removeAttribute(.underlineStyle, range: fullRange)
 
-        guard darkMode else { return }
+        guard darkMode else {
+            textStorage.endEditing()
+            return
+        }
 
         // Fenced code blocks first (so inline patterns don't match inside them)
         var fencedRanges: [NSRange] = []
@@ -196,6 +204,8 @@ final class MarkdownHighlighter: NSObject, NSTextStorageDelegate {
                 textStorage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: urlRange)
             }
         }
+
+        textStorage.endEditing()
     }
 
     // MARK: - Helpers
