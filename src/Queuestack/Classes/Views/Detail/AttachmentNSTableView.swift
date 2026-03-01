@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import Carbon.HIToolbox
 import Quartz
 
 /// Custom NSTableView that handles keyboard events and Quick Look panel control.
@@ -18,9 +19,9 @@ final class AttachmentNSTableView: NSTableView {
     }
 
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == KeyCode.space {
+        if event.keyCode == UInt16(kVK_Space) {
             self.coordinator?.toggleQuickLook()
-        } else if event.keyCode == KeyCode.delete, event.modifierFlags.contains(.command) {
+        } else if event.keyCode == UInt16(kVK_Delete), event.modifierFlags.contains(.command) {
             self.coordinator?.deleteSelected()
         } else {
             super.keyDown(with: event)

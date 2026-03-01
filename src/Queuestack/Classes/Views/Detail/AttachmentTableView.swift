@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import Carbon.HIToolbox
 import DZFoundation
 import Quartz
 import SwiftUI
@@ -415,7 +416,7 @@ extension AttachmentTableView {
         func previewPanel(_: QLPreviewPanel!, handle event: NSEvent!) -> Bool {
             if event.type == .keyDown {
                 // Let arrow keys propagate to table view to change selection
-                if event.keyCode == KeyCode.downArrow || event.keyCode == KeyCode.upArrow {
+                if event.keyCode == UInt16(kVK_DownArrow) || event.keyCode == UInt16(kVK_UpArrow) {
                     self.tableView?.keyDown(with: event)
                     return true
                 }
