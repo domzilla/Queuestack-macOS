@@ -43,7 +43,7 @@ struct ItemRow: View {
 
     private var labelsLine: some View {
         FlowLayout(spacing: 4) {
-            ForEach(self.item.labels, id: \.self) { label in
+            ForEach(self.item.labels.sorted(), id: \.self) { label in
                 self.labelPill(label)
             }
         }
