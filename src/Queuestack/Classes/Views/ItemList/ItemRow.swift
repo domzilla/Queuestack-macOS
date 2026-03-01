@@ -29,6 +29,7 @@ struct ItemRow: View {
                 self.categoryPill(category)
             }
             Text(self.item.title)
+                .font(.body)
                 .lineLimit(1)
             Spacer(minLength: 0)
             if !self.item.attachments.isEmpty {
