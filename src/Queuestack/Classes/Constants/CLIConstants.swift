@@ -10,7 +10,7 @@ import Foundation
 
 /// Constants for the queuestack CLI tool (`qs`)
 /// Structure mirrors the CLI command hierarchy
-nonisolated(unsafe) enum CLIConstants {
+nonisolated enum CLIConstants {
     /// Default path to the qs binary
     static let defaultBinaryPath = "/opt/homebrew/bin/qs"
 
