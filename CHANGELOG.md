@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blockquote (`>`) syntax highlighting with italic font in the markdown editor
 
 ### Changed
+- Redesign item list rows: replace column-based `Table` with custom `List` rows showing category pill + title on the first line and label pills in a wrapping `FlowLayout` on the second line; rows adapt height to content
 - Extract syntax highlighting colors from `MarkdownHighlighter` into a dedicated `NSColor.SyntaxHighlighting` extension
 - Switch syntax highlighting from custom hex colors to dynamic `NSColor.system*` colors; highlighting now works in both light and dark mode
 - Use SF Mono (monospaced system font) as the base font in the markdown body editor
