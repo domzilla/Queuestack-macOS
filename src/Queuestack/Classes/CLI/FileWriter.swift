@@ -12,7 +12,9 @@ import Foundation
 struct FileWriter {
     struct Error: LocalizedError {
         let message: String
-        var errorDescription: String? { self.message }
+        var errorDescription: String? {
+            self.message
+        }
     }
 
     /// Update the body of an item file, preserving frontmatter

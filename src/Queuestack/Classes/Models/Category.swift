@@ -9,7 +9,10 @@
 import Foundation
 
 struct Category: Identifiable, Hashable {
-    var id: String { self.name }
+    var id: String {
+        self.name
+    }
+
     let name: String
     var itemCount: Int
 

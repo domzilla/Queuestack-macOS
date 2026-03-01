@@ -54,7 +54,9 @@ struct Project: Identifiable, Hashable, Codable {
 extension Project {
     struct Error: LocalizedError {
         let message: String
-        var errorDescription: String? { self.message }
+        var errorDescription: String? {
+            self.message
+        }
     }
 
     /// Creates a Project from a folder URL, reading config if present

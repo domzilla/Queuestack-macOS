@@ -13,7 +13,9 @@ import Quartz
 final class AttachmentNSTableView: NSTableView {
     weak var coordinator: AttachmentTableView.Coordinator?
 
-    override var acceptsFirstResponder: Bool { true }
+    override var acceptsFirstResponder: Bool {
+        true
+    }
 
     override func keyDown(with event: NSEvent) {
         if event.keyCode == KeyCode.space {

@@ -99,7 +99,6 @@ struct ItemDetailView: View {
         self.pendingItemID = nil
     }
 
-    @ViewBuilder
     private func detailContent(_ item: Item) -> some View {
         VStack(spacing: 0) {
             // Fixed header

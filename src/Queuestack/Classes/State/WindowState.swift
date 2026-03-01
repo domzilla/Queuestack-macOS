@@ -51,7 +51,9 @@ final class WindowState {
         case closed
         case template
 
-        var id: String { self.rawValue }
+        var id: String {
+            self.rawValue
+        }
 
         var localizedName: String {
             switch self {

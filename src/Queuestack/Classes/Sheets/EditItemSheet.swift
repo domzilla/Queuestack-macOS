@@ -137,7 +137,6 @@ struct EditItemSheet: View {
         }
     }
 
-    @ViewBuilder
     private var categoryContent: some View {
         CategoryPicker(
             categories: self.allCategoryNames,

@@ -45,7 +45,9 @@ actor CLIRunner {
 
     struct Error: LocalizedError {
         let message: String
-        var errorDescription: String? { self.message }
+        var errorDescription: String? {
+            self.message
+        }
     }
 
     func run(

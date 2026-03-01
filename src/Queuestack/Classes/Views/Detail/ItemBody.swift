@@ -11,7 +11,6 @@ import SwiftUI
 
 struct ItemBody: View {
     @Environment(WindowState.self) private var windowState
-    @FocusState private var isFocused: Bool
 
     var body: some View {
         @Bindable var windowState = self.windowState
@@ -48,23 +47,15 @@ struct ItemBody: View {
                 }
             }
 
-            TextEditor(text: $windowState.editingBodyText)
-                .font(.body)
-                .scrollContentBackground(.hidden)
-                .padding(8)
-                .background(.quaternary.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .frame(maxHeight: .infinity)
-                .focused(self.$isFocused)
+            MarkdownTextView(
+                text: $windowState.editingBodyText,
+                onSave: { self.windowState.saveBodyChanges() }
+            )
+            .background(.quaternary.opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .frame(maxHeight: .infinity)
         }
         .frame(maxHeight: .infinity)
-        .onKeyPress(phases: .down) { press in
-            if press.key == "s", press.modifiers.contains(.command) {
-                self.windowState.saveBodyChanges()
-                return .handled
-            }
-            return .ignored
-        }
     }
 }
 

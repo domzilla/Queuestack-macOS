@@ -12,7 +12,9 @@ import Foundation
 struct Parser {
     struct Error: LocalizedError {
         let message: String
-        var errorDescription: String? { self.message }
+        var errorDescription: String? {
+            self.message
+        }
     }
 
     // MARK: - Frontmatter Parsing
