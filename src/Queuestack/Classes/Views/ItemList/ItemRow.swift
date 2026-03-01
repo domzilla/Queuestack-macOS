@@ -12,7 +12,7 @@ struct ItemRow: View {
     let item: Item
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             self.titleLine
             if !self.item.labels.isEmpty {
                 self.labelsLine
@@ -26,7 +26,7 @@ struct ItemRow: View {
     private var titleLine: some View {
         HStack(spacing: 6) {
             if let category = self.item.category {
-                self.pill(category)
+                self.categoryPill(category)
             }
             Text(self.item.title)
                 .lineLimit(1)
@@ -44,19 +44,31 @@ struct ItemRow: View {
     private var labelsLine: some View {
         FlowLayout(spacing: 4) {
             ForEach(self.item.labels, id: \.self) { label in
-                self.pill(label)
+                self.labelPill(label)
             }
         }
     }
 
-    // MARK: - Pill
+    // MARK: - Pills
 
-    private func pill(_ text: String) -> some View {
+    private func categoryPill(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .strokeBorder(.secondary.opacity(0.5))
+            )
+    }
+
+    private func labelPill(_ text: String) -> some View {
         Text(text)
             .font(.caption)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(.quaternary)
+            .background(Color.deterministic(from: text).opacity(0.75))
             .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }
