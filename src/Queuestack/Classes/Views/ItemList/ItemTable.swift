@@ -20,6 +20,7 @@ struct ItemTable: View {
 
         List(self.windowState.filteredItems, selection: $windowState.selectedItemID) { item in
             ItemRow(item: item)
+                .id("\(item.id)-\(item.labels.count)")
         }
         .listStyle(.inset)
         .alternatingRowBackgrounds(.disabled)
