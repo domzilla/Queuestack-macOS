@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Extract syntax highlighting colors from `MarkdownHighlighter` into a dedicated `NSColor.SyntaxHighlighting` extension
 - Switch syntax highlighting from custom hex colors to dynamic `NSColor.system*` colors; highlighting now works in both light and dark mode
+- Use SF Mono (monospaced system font) as the base font in the markdown body editor
 - Replace custom `KeyCode` enum with Apple's `kVK_*` constants from `Carbon.HIToolbox`
 
 ### Fixed

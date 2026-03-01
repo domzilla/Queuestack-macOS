@@ -15,7 +15,6 @@ final class MarkdownHighlighter: NSObject, NSTextStorageDelegate {
     private let boldFont: NSFont
     private let italicFont: NSFont
     private let boldItalicFont: NSFont
-    private let monoFont: NSFont
 
     // MARK: - Regex Patterns
 
@@ -34,11 +33,10 @@ final class MarkdownHighlighter: NSObject, NSTextStorageDelegate {
 
     override init() {
         let size = NSFont.systemFontSize
-        self.baseFont = NSFont.systemFont(ofSize: size)
-        self.boldFont = NSFont.boldSystemFont(ofSize: size)
+        self.baseFont = NSFont.monospacedSystemFont(ofSize: size, weight: .regular)
+        self.boldFont = NSFont.monospacedSystemFont(ofSize: size, weight: .bold)
         self.italicFont = NSFontManager.shared.convert(self.baseFont, toHaveTrait: .italicFontMask)
         self.boldItalicFont = NSFontManager.shared.convert(self.boldFont, toHaveTrait: .italicFontMask)
-        self.monoFont = NSFont.monospacedSystemFont(ofSize: size, weight: .regular)
 
         // swiftlint:disable force_try
         self.headingPattern = try! NSRegularExpression(pattern: "^(#{1,6})\\s+(.+)$", options: .anchorsMatchLines)
@@ -99,7 +97,7 @@ final class MarkdownHighlighter: NSObject, NSTextStorageDelegate {
             // Apply monospace font to the content inside fences
             if match.numberOfRanges > 1 {
                 let contentRange = match.range(at: 1)
-                textStorage.addAttribute(.font, value: self.monoFont, range: contentRange)
+                textStorage.addAttribute(.font, value: self.baseFont, range: contentRange)
             }
         }
 
@@ -135,7 +133,7 @@ final class MarkdownHighlighter: NSObject, NSTextStorageDelegate {
         self.inlineCodePattern.enumerateMatches(in: text, range: fullRange) { match, _, _ in
             guard let match, !self.isInsideFencedCode(match.range, fencedRanges: fencedRanges) else { return }
             textStorage.addAttribute(.foregroundColor, value: NSColor.SyntaxHighlighting.inlineCode, range: match.range)
-            textStorage.addAttribute(.font, value: self.monoFont, range: match.range)
+            textStorage.addAttribute(.font, value: self.baseFont, range: match.range)
         }
 
         // Unordered list markers

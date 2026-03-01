@@ -45,7 +45,7 @@ struct MarkdownTextView: NSViewRepresentable {
         textView.delegate = context.coordinator
         textView.isRichText = false
         textView.allowsUndo = true
-        textView.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        textView.font = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         textView.textColor = .labelColor
         textView.drawsBackground = false
         textView.isEditable = true
@@ -82,7 +82,7 @@ struct MarkdownTextView: NSViewRepresentable {
                 let fullRange = NSRange(location: 0, length: textStorage.length)
                 textStorage.addAttribute(
                     .font,
-                    value: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+                    value: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular),
                     range: fullRange
                 )
                 textStorage.addAttribute(.foregroundColor, value: NSColor.labelColor, range: fullRange)
