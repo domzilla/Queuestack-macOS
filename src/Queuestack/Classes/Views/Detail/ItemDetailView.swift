@@ -165,34 +165,18 @@ struct ItemDetailView: View {
                 HStack(spacing: 4) {
                     Text(String(localized: "Created at:", comment: "Created date label"))
                         .foregroundStyle(.secondary)
-                    Text(item.createdAt, style: .date)
+                    Text(item.createdAt, format: Date.FormatStyle(date: .long, time: .shortened))
                 }
                 .font(.caption)
             }
 
-            // Author and Labels row
-            HStack {
-                HStack(spacing: 4) {
-                    Text(String(localized: "Author:", comment: "Author label"))
-                        .foregroundStyle(.secondary)
-                    Text(item.author)
-                }
-                .font(.caption)
-
-                Spacer()
-
-                HStack(spacing: 4) {
-                    Text(String(localized: "Labels:", comment: "Labels label"))
-                        .foregroundStyle(.secondary)
-                    if item.labels.isEmpty {
-                        Text("—")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text(item.labels.joined(separator: ", "))
-                    }
-                }
-                .font(.caption)
+            // Author row
+            HStack(spacing: 4) {
+                Text(String(localized: "Author:", comment: "Author label"))
+                    .foregroundStyle(.secondary)
+                Text(item.author)
             }
+            .font(.caption)
         }
         .padding()
         .background(.bar)
